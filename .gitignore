@@ -1,0 +1,22 @@
+# Environment files
+.env
+.env.local
+
+# Backup files
+*.bat.bak
+data_old_*
+data_backup_*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.github/instructions/snyk_rules.instructions.md
