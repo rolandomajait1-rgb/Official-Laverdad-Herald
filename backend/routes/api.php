@@ -482,7 +482,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('admin/users', \App\Http\Controllers\UserController::class);
         Route::apiResource('staff', StaffController::class);
         Route::apiResource('authors', AuthorController::class);
-        Route::apiResource('users', UserController::class);
     });
 
     // Moderator API Routes
