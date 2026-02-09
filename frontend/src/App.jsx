@@ -329,22 +329,6 @@ function AnimatedRoutes() {
         <Route
           path="/category/opinion"
           element={
-            <ProtectedRoute>dRoute>
-              <motion.div
-                initial="initial"
-                animate="in"
-                exit="out"
-                variants={pageVariants}
-                transition={pageTransition}
-              >
-                <Literary />
-              </motion.div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/category/opinion"
-          element={
             <ProtectedRoute>
               <motion.div
                 initial="initial"
