@@ -36,5 +36,6 @@ EXPOSE 8080
 # Start command
 CMD php artisan config:cache && \
     php artisan route:cache && \
+    sleep 5 && \
     php artisan migrate --force && \
     php artisan serve --host=0.0.0.0 --port=8080
