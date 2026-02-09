@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: laverdad-herald-backend
+    env: docker
+    plan: free
+    buildCommand: composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache
+    startCommand: php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+    envVars:
+      - key: APP_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: laverdad-herald-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: laverdad-herald-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: laverdad-herald-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: laverdad-herald-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: laverdad-herald-db
+          property: password
+      - key: DB_SSLMODE
+        value: require
+
+databases:
+  - name: laverdad-herald-db
+    plan: free
+    databaseName: laverdad_herald_db
+    user: laverdad_herald_user
