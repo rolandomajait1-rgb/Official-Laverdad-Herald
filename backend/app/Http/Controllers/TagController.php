@@ -13,6 +13,10 @@ class TagController extends Controller
     public function index()
     {
         $tags = Tag::paginate(10);
+        // For API endpoints, default to JSON unless explicitly requesting HTML
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json($tags);
+        }
         return view('tags.index', compact('tags'));
     }
 
@@ -40,6 +44,9 @@ class TagController extends Controller
             'new_values' => $tag->toArray(),
         ]);
 
+        if (request()->wantsJson()) {
+            return response()->json($tag, 201);
+        }
         return redirect()->route('tags.index')->with('success', 'Tag created successfully.');
     }
 
