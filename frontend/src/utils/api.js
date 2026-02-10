@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// Build API base from VITE_API_BASE_URL, ensuring a single /api suffix
+const rawBase =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const BASE_ROOT = String(rawBase).replace(/\/api\/?$/i, "");
+const API_BASE_URL = `${BASE_ROOT}/api`;
 
 export const apiEndpoints = {
   articles: `${API_BASE_URL}/articles`,
@@ -8,11 +12,11 @@ export const apiEndpoints = {
 };
 
 export const apiRequest = async (url, options = {}) => {
-  const token = localStorage.getItem('auth_token');
-  
+  const token = localStorage.getItem("auth_token");
+
   const defaultHeaders = {
-    'Accept': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
+    Accept: "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 
   const config = {
@@ -24,11 +28,11 @@ export const apiRequest = async (url, options = {}) => {
   };
 
   const response = await fetch(url, config);
-  
+
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'API request failed');
+    throw new Error(errorData.message || "API request failed");
   }
-  
+
   return response.json();
 };
