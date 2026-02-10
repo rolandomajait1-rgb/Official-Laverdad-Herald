@@ -57,13 +57,11 @@ class ArticleController extends Controller
         $limit = $request->get('limit', 10);
         $articles = Article::published()->with('author.user', 'categories', 'tags')->latest('published_at')->paginate($limit);
         
-        if (request()->wantsJson()) {
-            return response()->json($articles)
-                ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-        }
-        return view('articles.index', compact('articles'));
+        // Always return JSON for API endpoint
+        return response()->json($articles)
+            ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
+            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     }
 
     public function create()
