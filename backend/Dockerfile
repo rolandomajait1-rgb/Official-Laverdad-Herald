@@ -34,7 +34,5 @@ RUN chown -R www-data:www-data /var/www \
 EXPOSE ${PORT:-10000}
 
 # Start command
-CMD php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan migrate --force && \
+CMD php artisan migrate --force && \
     php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
