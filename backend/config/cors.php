@@ -21,12 +21,14 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'https://official-laverdad-herald.vercel.app',
+        'https://official-laverdad-herald-j84kxacox-rolando-majaits-projects.vercel.app',
         env('FRONTEND_URL', 'http://localhost:5173')
     ],
 
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
+    'allowed_methods' => ['*'],
 
     'exposed_headers' => [],
 
