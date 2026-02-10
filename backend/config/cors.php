@@ -20,6 +20,7 @@ return [
 
     'allowed_origins' => [
         'http://localhost:5173',
+        'https://official-laverdad-herald.vercel.app',
         env('FRONTEND_URL', 'http://localhost:5173')
     ],
 
