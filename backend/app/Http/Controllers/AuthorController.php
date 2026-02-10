@@ -14,6 +14,10 @@ class AuthorController extends Controller
     public function index()
     {
         $authors = Author::with('user')->paginate(10);
+        // For API endpoints, default to JSON unless explicitly requesting HTML
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json($authors);
+        }
         return view('authors.index', compact('authors'));
     }
 

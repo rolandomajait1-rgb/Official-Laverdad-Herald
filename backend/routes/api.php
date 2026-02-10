@@ -321,6 +321,14 @@ Route::get('/categories/{category}/articles', function ($category) {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 });
 
+// Public Tags API (GET endpoints)
+Route::get('/tags', [TagController::class, 'index']);
+Route::get('/tags/{tag}', [TagController::class, 'show']);
+
+// Public Logs API (GET endpoints)  
+Route::get('/logs', [LogController::class, 'index']);
+Route::get('/logs/{log}', [LogController::class, 'show']);
+
 // API Routes with Sanctum authentication
 Route::middleware('auth:sanctum')->group(function () {
     // User API
@@ -351,15 +359,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
-    // Tags API
-    Route::apiResource('tags', TagController::class);
+    // Tags API (authenticated write operations)
+    Route::post('/tags', [TagController::class, 'store']);
+    Route::put('/tags/{tag}', [TagController::class, 'update']);
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
 
     // Subscribers API
     Route::apiResource('subscribers', SubscriberController::class);
-
-    // Logs API
-    Route::get('/logs', [LogController::class, 'index']);
-    Route::get('/logs/{log}', [LogController::class, 'show']);
 
     // Admin & Moderator shared routes
     Route::middleware(['role:admin,moderator'])->group(function () {
@@ -481,7 +487,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('admin/users', \App\Http\Controllers\UserController::class);
         Route::apiResource('staff', StaffController::class);
-        Route::apiResource('authors', AuthorController::class);
     });
 
     // Moderator API Routes
