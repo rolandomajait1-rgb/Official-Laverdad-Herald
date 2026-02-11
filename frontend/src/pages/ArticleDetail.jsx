@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import DOMPurify from 'dompurify';
 import { Pencil, Trash2, Heart, Share2, Link } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -271,7 +272,7 @@ export default function ArticleDetail() {
           {/* Article Body Content */}
           <div className="p-6 md:p-10">
             <div className="prose prose-lg max-w-none text-gray-800">
-              <div className="whitespace-pre-line leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
+              <div className="whitespace-pre-line leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }} />
             </div>
             
             {/* Like and Share Section */}

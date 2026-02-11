@@ -6,6 +6,7 @@ use App\Models\Draft;
 use App\Models\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Helpers\CorsHelper;
 
 class DraftController extends Controller
 {
@@ -16,11 +17,7 @@ class DraftController extends Controller
         } else {
             $drafts = Draft::with('author.user')->where('author_id', Auth::user()->author->id)->paginate(10);
         }
-        return response()->json($drafts)
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return CorsHelper::addHeaders(response()->json($drafts));
     }
 
     public function create()

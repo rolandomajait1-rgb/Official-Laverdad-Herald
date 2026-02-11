@@ -16,19 +16,21 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
-
     'allowed_origins' => [
         'http://localhost:5173',
         'https://official-laverdad-herald.vercel.app',
         'https://official-laverdad-herald-j84kxacox-rolando-majaits-projects.vercel.app',
-        env('FRONTEND_URL', 'http://localhost:5173')
+        env('FRONTEND_URL', 'http://localhost:5173'),
     ],
 
-    'allowed_origins_patterns' => [],
+    // Allow preview/deployed Vercel subdomains via pattern
+    'allowed_origins_patterns' => [
+        '^https?:\/\/.*\.vercel\.app$',
+    ],
+
+    'allowed_methods' => ['*'],
 
     'allowed_headers' => ['*'],
-    'allowed_methods' => ['*'],
 
     'exposed_headers' => [],
 

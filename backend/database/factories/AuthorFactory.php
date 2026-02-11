@@ -18,7 +18,6 @@ class AuthorFactory extends Factory
     {
         return [
             'user_id' => \App\Models\User::factory(),
-            'name' => $this->faker->name,
             'bio' => $this->faker->paragraph(),
             'website' => $this->faker->url(),
             'social_links' => [

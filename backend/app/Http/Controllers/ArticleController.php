@@ -57,11 +57,7 @@ class ArticleController extends Controller
         $limit = $request->get('limit', 10);
         $articles = Article::published()->with('author.user', 'categories', 'tags')->latest('published_at')->paginate($limit);
         
-        // Always return JSON for API endpoint
-        return response()->json($articles)
-            ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return response()->json($articles);
     }
 
     public function create()
@@ -137,11 +133,7 @@ class ArticleController extends Controller
             $article->tags()->sync($tagIds);
         }
 
-        return response()->json($article->load('author.user', 'categories', 'tags'), 201)
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return response()->json($article->load('author.user', 'categories', 'tags'), 201);
     }
 
     public function show(Article $article)
@@ -149,20 +141,12 @@ class ArticleController extends Controller
         try {
             if (request()->wantsJson()) {
                 $article->load('author.user', 'categories', 'tags');
-                return response()->json($article)
-                    ->header('Access-Control-Allow-Origin', '*')
-                    ->header('Access-Control-Allow-Credentials', 'true')
-                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+                return response()->json($article);
             }
             return view('articles.show', compact('article'));
         } catch (\Exception $e) {
             Log::error('Error in ArticleController@show: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load article: ' . $e->getMessage()], 500)
-                ->header('Access-Control-Allow-Origin', '*')
-                ->header('Access-Control-Allow-Credentials', 'true')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+            return response()->json(['error' => 'Failed to load article: ' . $e->getMessage()], 500);
         }
     }
 
@@ -266,11 +250,7 @@ class ArticleController extends Controller
 
         // Logging removed as Log model is not available
 
-        return response()->json($article->load('author.user', 'categories', 'tags'))
-            ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return response()->json($article->load('author.user', 'categories', 'tags'));
     }
 
     public function destroy(Article $article)
@@ -283,17 +263,9 @@ class ArticleController extends Controller
 
             $article->delete();
 
-            return response()->json(['message' => 'Article deleted successfully'])
-                ->header('Access-Control-Allow-Origin', '*')
-                ->header('Access-Control-Allow-Credentials', 'true')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+            return response()->json(['message' => 'Article deleted successfully']);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to delete article: ' . $e->getMessage()], 500)
-                ->header('Access-Control-Allow-Origin', '*')
-                ->header('Access-Control-Allow-Credentials', 'true')
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+            return response()->json(['error' => 'Failed to delete article: ' . $e->getMessage()], 500);
         }
     }
 
@@ -344,11 +316,7 @@ class ArticleController extends Controller
         ->with('author.user', 'categories', 'tags')
         ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($articles)
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return response()->json($articles);
     }
 
     public function getSharedArticles(Request $request)
@@ -363,11 +331,7 @@ class ArticleController extends Controller
         ->with('author.user', 'categories', 'tags')
         ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($articles)
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return response()->json($articles);
     }
 
     public function getArticlesByAuthor(Request $request, $authorId)
@@ -399,11 +363,7 @@ class ArticleController extends Controller
             'articles' => $articles,
             'article_count' => $articleCount,
             'author' => $author->load('user')
-        ])
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        ]);
     }
 
     // Public version of getArticlesByAuthor (no auth required)
@@ -435,10 +395,6 @@ class ArticleController extends Controller
             'articles' => $articles,
             'article_count' => $articleCount,
             'author' => $author->load('user')
-        ])
-            ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        ]);
     }
 }
