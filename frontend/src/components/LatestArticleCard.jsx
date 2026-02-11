@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ArticleCard from './ArticleCard';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 
 export default function LatestArticles() {
   const [articles, setArticles] = useState([]);
@@ -13,10 +13,8 @@ export default function LatestArticles() {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('http://localhost:8000/api/articles/public', {
+        const response = await axios.get('/api/articles/public', {
           params: { latest: true, limit: 9 },
-          headers: { 'Accept': 'application/json' },
-          withCredentials: false
         });
         const articlesData = response.data.data || response.data || [];
         setArticles(Array.isArray(articlesData) ? articlesData : []);
