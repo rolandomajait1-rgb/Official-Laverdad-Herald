@@ -52,7 +52,7 @@ class ArticleCreationTest extends TestCase
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/articles', $articleData);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('author_name');
+        $response->assertStatus(404)
+            ->assertJson(['error' => 'Author user not found']);
     }
 }

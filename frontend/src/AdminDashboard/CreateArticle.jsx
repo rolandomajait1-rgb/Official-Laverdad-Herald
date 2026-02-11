@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import Navigation from "../components/HeaderLink";
 import { AdminSidebar } from "../components/AdminSidebar";
 import { getUserRole } from '../utils/auth';
+import axios from '../utils/axiosConfig';
 
 export default function CreateArticle() {
   const navigate = useNavigate();
@@ -88,7 +89,6 @@ export default function CreateArticle() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('category_id', category);
-      // Convert textarea newlines into HTML paragraphs to preserve spacing
       const formattedContent = content
         ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
         : '';
@@ -101,29 +101,18 @@ export default function CreateArticle() {
         formData.append('featured_image', image);
       }
 
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/articles', {
-        method: 'POST',
-        body: formData,
+      const response = await axios.post('/api/articles', formData, {
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(errorData.message || 'Failed to save draft');
-      }
-
-      const result = await response.json();
-      console.log('Draft saved:', result);
+      console.log('Draft saved:', response.data);
       alert("Draft saved successfully!");
       navigate('/admin/draft-articles');
     } catch (error) {
       console.error('Save draft error:', error);
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.message || error.message}`);
     } finally {
       setIsSavingDraft(false);
     }
@@ -139,7 +128,6 @@ export default function CreateArticle() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('category_id', category);
-      // Convert textarea newlines into HTML paragraphs to preserve spacing
       const formattedContent = content
         ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
         : '';
@@ -152,36 +140,21 @@ export default function CreateArticle() {
         formData.append('featured_image', image);
       }
 
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/articles', {
-        method: 'POST',
-        body: formData,
+      await axios.post('/api/articles', formData, {
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      if (!response.ok) {
-        let errorMessage = 'Failed to publish article';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-          if (errorData.errors) {
-            errorMessage = Object.values(errorData.errors).flat().join(', ');
-          }
-        } catch {
-          // silent
-        }
-        throw new Error(errorMessage);
-      }
-
-      await response.json();
       alert("Article published successfully!");
       navigate('/admin');
     } catch (error) {
       console.error('Publish error:', error);
-      alert(`Error: ${error.message}`);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          (error.response?.data?.errors ? Object.values(error.response.data.errors).flat().join(', ') : null) ||
+                          error.message;
+      alert(`Error: ${errorMessage}`);
     } finally {
       setIsPublishing(false);
     }

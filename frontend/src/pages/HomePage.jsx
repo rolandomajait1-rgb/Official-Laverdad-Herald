@@ -11,6 +11,7 @@ import { PLACEHOLDER_IMAGE } from '../utils/placeholder';
 import { getUserRole } from '../utils/auth';
 import { FiExternalLink } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import axios from '../utils/axiosConfig';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -44,8 +45,8 @@ export default function HomePage() {
       try {
         const categories = ['news', 'literary', 'specials', 'opinion', 'art', 'features', 'sports'];
         const promises = categories.map(category =>
-          fetch(`http://localhost:8000/api/categories/${category}/articles`)
-            .then(response => response.json())
+          axios.get(`/api/categories/${category}/articles`)
+            .then(response => response.data)
         );
 
         const responses = await Promise.all(promises);
