@@ -4,6 +4,7 @@ import { ArticleGrid } from '../components/GridLayout';
 import Header from '../components/Header';
 import HeaderLink from '../components/HeaderLink';
 import Footer from '../components/Footer';
+import axios from '../utils/axiosConfig';
 
 const CategoryPage = () => {
   const { category } = useParams();
@@ -24,9 +25,8 @@ const CategoryPage = () => {
   useEffect(() => {
     const fetchCategoryArticles = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/categories/${category}/articles`);
-        const data = await response.json();
-        setArticles(data.data || []);
+        const response = await axios.get(`/api/categories/${category}/articles`);
+        setArticles(response.data.data || []);
       } catch (error) {
         console.error('Error fetching articles:', error);
         setArticles([]);
