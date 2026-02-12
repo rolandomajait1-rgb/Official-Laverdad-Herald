@@ -41,8 +41,8 @@ export default function Login() {
     const newErrors = {};
     if (!formData.email) {
       newErrors.email = ["Email is required"];
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = ["Please enter a valid email address"];
+    } else if (!formData.email.endsWith("@student.laverdad.edu.ph")) {
+      newErrors.email = ["Only @student.laverdad.edu.ph emails are allowed"];
     }
     if (!formData.password) {
       newErrors.password = ["Password is required"];
