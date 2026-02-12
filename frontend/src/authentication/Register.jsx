@@ -20,22 +20,41 @@ export default function Register() {
       ...formData,
       [name]: value,
     });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: null });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.email.endsWith('@student.laverdad.edu.ph')) {
+      newErrors.email = ['Only @student.laverdad.edu.ph emails are allowed'];
+    }
+    if (formData.password !== formData.password_confirmation) {
+      newErrors.password_confirmation = ['Passwords do not match'];
+    }
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
+    
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     try {
-      const response = await axios.post('/api/register', {
+      await axios.post('/api/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
-      console.log('Registration successful:', response.data);
-      navigate('/login');
+      navigate('/login?registered=1');
     } catch (error) {
-      console.error('Registration error:', error.response?.data);
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
