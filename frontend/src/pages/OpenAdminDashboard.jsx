@@ -12,7 +12,8 @@ export default function OpenAdminDashboard() {
     if (window.confirm('Are you sure you want to reset all test data? This will delete all articles and interactions.')) {
       try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('http://localhost:8000/api/admin/reset-data', {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${baseUrl}/admin/reset-data`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

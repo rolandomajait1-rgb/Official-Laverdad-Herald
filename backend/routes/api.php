@@ -32,17 +32,19 @@ Route::middleware('throttle:5,1')->group(function () {
 Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
     $user = \App\Models\User::findOrFail($id);
     
+    $frontendUrl = config('app.frontend_url');
+
     if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-        return response()->json(['message' => 'Invalid verification link'], 403);
+        return redirect($frontendUrl . '/login?error=invalid_verification_link');
     }
     
     if ($user->hasVerifiedEmail()) {
-        return response()->json(['message' => 'Email already verified'], 200);
+        return redirect($frontendUrl . '/login?verified=1&message=already_verified');
     }
     
     $user->markEmailAsVerified();
     
-    return response()->json(['message' => 'Email verified successfully! You can now log in.'], 200);
+    return redirect($frontendUrl . '/login?verified=1');
 })->name('verification.verify');
 
 Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
