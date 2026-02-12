@@ -73,6 +73,9 @@ Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
 Route::get('/articles/search', function (Request $request) {
     $query = $request->get('q', '');
     
+    // Sanitize search query to prevent wildcard abuse
+    $query = str_replace(['%', '_'], ['\%', '\_'], $query);
+    
     if (strlen(trim($query)) < 3) {
         return response()->json(['data' => []]);
     }

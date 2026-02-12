@@ -32,11 +32,20 @@ class Article extends Model
     
     public function getLikesCountAttribute()
     {
+        // Use eager loaded count if available
+        if (array_key_exists('likes_count', $this->attributes)) {
+            return $this->attributes['likes_count'];
+        }
         return $this->interactions()->where('type', 'liked')->count();
     }
 
     public function getIsLikedAttribute()
     {
+        // Use eager loaded existence check if available
+        if (array_key_exists('is_liked', $this->attributes)) {
+            return (bool) $this->attributes['is_liked'];
+        }
+        
         if (Auth::check()) {
             return $this->interactions()->where('user_id', Auth::id())->where('type', 'liked')->exists();
         }
@@ -47,7 +56,7 @@ class Article extends Model
     {
         if (isset($this->attributes['featured_image']) && $this->attributes['featured_image']) {
             if (config('app.env') === 'local') {
-                return 'http://localhost:8000/storage/' . $this->attributes['featured_image'];
+                return config('app.url') . '/storage/' . $this->attributes['featured_image'];
             }
             return url('storage/' . $this->attributes['featured_image']);
         }
