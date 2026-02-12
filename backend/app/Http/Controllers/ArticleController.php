@@ -108,44 +108,49 @@ class ArticleController extends Controller
             return response()->json(['error' => 'Author profile not found'], 404);
         }
 
-        $imagePath = null;
-        if ($request->hasFile('featured_image')) {
-            $imagePath = $request->file('featured_image')->store('articles', 'public');
-        }
-
-        $baseSlug = Str::slug($validated['title']);
-        $slug = $baseSlug;
-        $counter = 1;
-        
-        while (Article::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
-
-        $status = $request->get('status', 'published');
-        $article = Article::create([
-            'title' => $validated['title'],
-            'slug' => $slug,
-            'content' => $validated['content'],
-            'author_id' => $author->id,
-            'status' => $status,
-            'published_at' => $status === 'published' ? now() : null,
-            'excerpt' => Str::limit($validated['content'], 150),
-            'featured_image' => $imagePath,
-        ]);
-
-        $article->categories()->attach($validated['category_id']);
-
-        if (!empty($validated['tags'])) {
-            $tagIds = [];
-            foreach ($validated['tags'] as $tagName) {
-                $tag = Tag::firstOrCreate(['name' => trim($tagName)]);
-                $tagIds[] = $tag->id;
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $validated, $author) {
+            $imagePath = null;
+            if ($request->hasFile('featured_image')) {
+                $imagePath = $request->file('featured_image')->store('articles', 'public');
             }
-            $article->tags()->sync($tagIds);
-        }
 
-        return response()->json($article->load('author.user', 'categories', 'tags'), 201);
+            $baseSlug = Str::slug($validated['title']);
+            $slug = $baseSlug;
+            $counter = 1;
+
+            // Simple loop for now, but inside transaction with lockForUpdate on a check would be better, 
+            // relying on unique index constraint exception is the mostly robust way. 
+            // For now, we keep the loop but ensures atomicity of the whole operation.
+            while (Article::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+
+            $status = $request->get('status', 'published');
+            $article = Article::create([
+                'title' => $validated['title'],
+                'slug' => $slug,
+                'content' => $validated['content'],
+                'author_id' => $author->id,
+                'status' => $status,
+                'published_at' => $status === 'published' ? now() : null,
+                'excerpt' => Str::limit($validated['content'], 150),
+                'featured_image' => $imagePath,
+            ]);
+
+            $article->categories()->attach($validated['category_id']);
+
+            if (!empty($validated['tags'])) {
+                $tagIds = [];
+                foreach ($validated['tags'] as $tagName) {
+                    $tag = Tag::firstOrCreate(['name' => trim($tagName)]);
+                    $tagIds[] = $tag->id;
+                }
+                $article->tags()->sync($tagIds);
+            }
+
+            return response()->json($article->load('author.user', 'categories', 'tags'), 201);
+        });
     }
 
     public function show(Article $article)

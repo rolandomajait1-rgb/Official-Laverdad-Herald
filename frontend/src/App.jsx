@@ -131,15 +131,17 @@ function AnimatedRoutes() {
         <Route
           path="/open-admin-dashboard"
           element={
-            <motion.div
-              initial="initial"
-              animate="in"
-              exit="out"
-              variants={pageVariants}
-              transition={pageTransition}
-            >
-              <OpenAdminDashboard />
-            </motion.div>
+            <ProtectedRoute>
+              <motion.div
+                initial="initial"
+                animate="in"
+                exit="out"
+                variants={pageVariants}
+                transition={pageTransition}
+              >
+                <OpenAdminDashboard />
+              </motion.div>
+            </ProtectedRoute>
           }
         />
         <Route
