@@ -11,7 +11,7 @@ class CorsMiddleware
     {
         if ($request->isMethod('OPTIONS')) {
             return response('', 200)
-                ->header('Access-Control-Allow-Origin', config('app.frontend_url', 'http://localhost:5173'))
+                ->header('Access-Control-Allow-Origin', config('app.frontend_url'))
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
                 ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
                 ->header('Access-Control-Allow-Credentials', 'true');
@@ -20,7 +20,7 @@ class CorsMiddleware
         $response = $next($request);
 
         return $response
-            ->header('Access-Control-Allow-Origin', config('app.frontend_url', 'http://localhost:5173'))
+                ->header('Access-Control-Allow-Origin', config('app.frontend_url'))
             ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
             ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
             ->header('Access-Control-Allow-Credentials', 'true');

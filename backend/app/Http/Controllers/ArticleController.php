@@ -17,7 +17,13 @@ class ArticleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Article::with('author.user', 'categories', 'tags');
+        $query = Article::with('author.user', 'categories', 'tags')
+            ->withCount(['interactions as likes_count' => function ($query) {
+                $query->where('type', 'liked');
+            }])
+            ->withExists(['interactions as is_liked' => function ($query) {
+                $query->where('user_id', Auth::id())->where('type', 'liked');
+            }]);
         
         // Filter by status if provided
         if ($request->has('status') && $request->status) {
@@ -55,7 +61,13 @@ class ArticleController extends Controller
     public function publicIndex(Request $request)
     {
         $limit = $request->get('limit', 10);
-        $articles = Article::published()->with('author.user', 'categories', 'tags')->latest('published_at')->paginate($limit);
+        $articles = Article::published()
+            ->with('author.user', 'categories', 'tags')
+            ->withCount(['interactions as likes_count' => function ($query) {
+                $query->where('type', 'liked');
+            }])
+            ->latest('published_at')
+            ->paginate($limit);
         
         return response()->json($articles);
     }
@@ -140,7 +152,15 @@ class ArticleController extends Controller
     {
         try {
             if (request()->wantsJson()) {
-                $article->load('author.user', 'categories', 'tags');
+                $article->load(['author.user', 'categories', 'tags']);
+                $article->loadCount(['interactions as likes_count' => function ($query) {
+                    $query->where('type', 'liked');
+                }]);
+                if (Auth::check()) {
+                   $article->loadExists(['interactions as is_liked' => function ($query) {
+                        $query->where('user_id', Auth::id())->where('type', 'liked');
+                    }]); 
+                }
                 return response()->json($article);
             }
             return view('articles.show', compact('article'));
@@ -155,6 +175,9 @@ class ArticleController extends Controller
     {
         $article = Article::published()
             ->with('author.user', 'categories', 'tags')
+            ->withCount(['interactions as likes_count' => function ($query) {
+                $query->where('type', 'liked');
+            }])
             ->where('slug', $slug)
             ->firstOrFail();
 

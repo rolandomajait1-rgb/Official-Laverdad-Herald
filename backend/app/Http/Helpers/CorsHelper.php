@@ -8,7 +8,7 @@ class CorsHelper
     {
         $allowedOrigins = [
             'https://laverdad.edu.ph',
-            'http://localhost:5173'
+            config('app.frontend_url')
         ];
         
         $origin = request()->header('Origin');
