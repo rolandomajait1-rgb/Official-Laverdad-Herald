@@ -19,10 +19,10 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|ends_with:@laverdad.edu.ph',
+            'email' => 'required|email|ends_with:@student.laverdad.edu.ph',
             'password' => 'required',
         ], [
-            'email.ends_with' => 'Only @laverdad.edu.ph email addresses can access this system.'
+            'email.ends_with' => 'Use a laverdad email addresses to access this system.'
         ]);
 
         if (Auth::attempt($request->only('email', 'password'))) {
@@ -38,10 +38,10 @@ class AuthController extends Controller
     public function loginApi(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|ends_with:@laverdad.edu.ph',
+            'email' => 'required|email|ends_with:@student.laverdad.edu.ph',
             'password' => 'required',
         ], [
-            'email.ends_with' => 'Only @laverdad.edu.ph email addresses can access this system.'
+            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses can access this system.'
         ]);
 
         if (Auth::attempt($request->only('email', 'password'))) {
@@ -73,10 +73,10 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|ends_with:@laverdad.edu.ph',
+            'email' => 'required|email|unique:users|ends_with:@student.laverdad.edu.ph',
             'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
         ], [
-            'email.ends_with' => 'Only @laverdad.edu.ph email addresses are allowed to register.'
+            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses are allowed to register.'
         ]);
 
         $user = User::create([
@@ -96,10 +96,10 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|ends_with:@laverdad.edu.ph',
+            'email' => 'required|email|unique:users|ends_with:@student.laverdad.edu.ph',
             'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
         ], [
-            'email.ends_with' => 'Only @laverdad.edu.ph email addresses are allowed to register.'
+            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses are allowed to register.'
         ]);
 
         $user = User::create([
