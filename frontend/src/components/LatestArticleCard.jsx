@@ -68,7 +68,7 @@ export default function LatestArticles() {
             {/* "Sign In" Button */}
             <div className="text-center mt-12">
               <Link
-                to="/login" // Link to the login page
+                to="/login"
                 className="bg-cyan-700 text-white px-10 py-3.5 rounded-lg font-semibold text-lg hover:bg-cyan-800 transition-colors"
               >
                 Sign in to Read More
