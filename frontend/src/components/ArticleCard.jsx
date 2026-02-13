@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPencilAlt, FaTrash, FaCalendar } from 'react-icons/fa';
 import { Heart, Share2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { isAdmin, isModerator, deleteArticle, getAuthToken } from '../utils/auth';
 
 const getUserRole = () => {
@@ -46,7 +47,7 @@ const ArticleCard = ({ featured_image, categories, published_at, title, excerpt,
     minute: '2-digit',
     hour12: true
   }) : '';
-  const finalSnippet = snippet || excerpt || '';
+  const finalSnippet = DOMPurify.sanitize(snippet || excerpt || '');
   const finalAuthor = author && author.user ? author.user.name : (typeof author === 'string' ? author : 'Unknown Author');
 
   useEffect(() => {
