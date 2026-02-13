@@ -1,10 +1,9 @@
 import axios from "axios";
 
-// Compute base root (ensure we don't include a trailing /api)
-const rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const BASE_ROOT = String(rawBase).replace(/\/api\/?$/i, "");
-// Set axios base to the app root (so CSRF route at /sanctum/csrf-cookie works)
-axios.defaults.baseURL = BASE_ROOT;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+// Set baseURL to root so /sanctum/csrf-cookie works
+axios.defaults.baseURL = BASE_URL;
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 

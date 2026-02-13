@@ -47,7 +47,7 @@ export default function Register() {
     }
 
     try {
-      await axios.post('/api/register', {
+      const response = await axios.post('/api/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -55,6 +55,7 @@ export default function Register() {
       });
       navigate('/login?registered=1');
     } catch (error) {
+      console.error('Registration error:', error);
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
