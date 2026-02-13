@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { isAdmin, getUserRole } from '../utils/auth';
 import { FaCalendar } from 'react-icons/fa';
 import axios from 'axios';
@@ -92,8 +93,8 @@ export default function ArticleCard({ imageUrl, title, excerpt, category, onClic
             {finalDate} {finalTime}
           </span>
         </div>
-        <h3 className="font-bold text-lg mb-2 text-gray-800 grow">{title}</h3>
-        {excerpt && <p className="text-gray-600 text-sm mb-4">{excerpt}</p>}
+        <h3 className="font-bold text-lg mb-2 text-gray-800 grow">{DOMPurify.sanitize(title)}</h3>
+        {excerpt && <p className="text-gray-600 text-sm mb-4">{DOMPurify.sanitize(excerpt)}</p>}
         
         {/* Spacer to push 'Read More' to the bottom */}
         <div className="grow"></div>

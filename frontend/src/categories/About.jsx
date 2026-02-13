@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DOMPurify from 'dompurify';
 import TeamMemberCard from '../components/TeamCard';
 import Header from '../components/Header';
 import Navigation from '../components/HeaderLink';
@@ -63,8 +64,8 @@ const About  = () => {
       try {
         const memberData = {
           id: teamMembers[selectedMemberIndex].id,
-          name: editName,
-          role: editRole,
+          name: DOMPurify.sanitize(editName),
+          role: DOMPurify.sanitize(editRole),
           image: previewUrl || teamMembers[selectedMemberIndex].image
         };
 

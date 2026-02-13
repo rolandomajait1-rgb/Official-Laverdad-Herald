@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Upload, ChevronDown } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import Header from "../components/Header";
 import Navigation from '../components/HeaderLink';
 
@@ -46,7 +47,7 @@ export default function EditArticle() {
             ? article.tags.map(tag => tag.name || tag).join(', ')
             : (article.tags || '');
           setTags(tagsString);
-          setContent(article.content || "");
+          setContent(DOMPurify.sanitize(article.content || ""));
           setCurrentImage(article.featured_image || null);
         } else {
           const errorText = await response.text();
