@@ -92,4 +92,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(Author::class);
     }
-}
+
+    public function sendEmailVerificationNotification()
+    {
+        $verificationUrl = config('app.frontend_url') . '/verify-email?id=' . $this->id . '&hash=' . hash('sha256', $this->getEmailForVerification());
+        
+        \Mail::send('emails.verify-email', ['user' => $this, 'verificationUrl' => $verificationUrl], function ($message) {
+            $message->to($this->email)->subject('Verify Your Email Address');
+        });
+    }
