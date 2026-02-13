@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -97,7 +98,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $verificationUrl = config('app.frontend_url') . '/verify-email?id=' . $this->id . '&hash=' . hash('sha256', $this->getEmailForVerification());
         
-        \Mail::send('emails.verify-email', ['user' => $this, 'verificationUrl' => $verificationUrl], function ($message) {
+        Mail::send('emails.verify-email', ['user' => $this, 'verificationUrl' => $verificationUrl], function ($message) {
             $message->to($this->email)->subject('Verify Your Email Address');
         });
     }
+}
