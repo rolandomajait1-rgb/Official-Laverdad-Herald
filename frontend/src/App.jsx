@@ -31,6 +31,7 @@ import ArticleDetail from './pages/ArticleDetail';
 import AuthorProfile from './pages/AuthorProfile';
 
 import TagSearchResults from './pages/TagSearchResults';
+import VerifyEmail from './pages/VerifyEmail';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Preloader from './components/Preloader';
@@ -493,6 +494,20 @@ function AnimatedRoutes() {
               transition={pageTransition}
             >
               <AuthorProfile />
+            </motion.div>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <motion.div
+              initial="initial"
+              animate="in"
+              exit="out"
+              variants={pageVariants}
+              transition={pageTransition}
+            >
+              <VerifyEmail />
             </motion.div>
           }
         />
