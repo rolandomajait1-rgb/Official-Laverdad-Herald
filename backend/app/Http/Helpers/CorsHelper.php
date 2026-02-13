@@ -7,7 +7,7 @@ class CorsHelper
     public static function addHeaders($response)
     {
         $allowedOrigins = [
-            'https://laverdad.edu.ph',
+            'https://student.laverdad.edu.ph',
             config('app.frontend_url')
         ];
         

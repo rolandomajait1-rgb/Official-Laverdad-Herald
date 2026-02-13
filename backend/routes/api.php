@@ -34,7 +34,7 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
     
     $frontendUrl = config('app.frontend_url');
 
-    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+    if (!hash_equals((string) $hash, hash('sha256', $user->getEmailForVerification()))) {
         return redirect($frontendUrl . '/login?error=invalid_verification_link');
     }
     
