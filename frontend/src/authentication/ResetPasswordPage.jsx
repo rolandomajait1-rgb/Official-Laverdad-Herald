@@ -1,18 +1,27 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 
-export default function Register() {
+export default function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    email: searchParams.get('email') || '',
+    token: searchParams.get('token') || '',
     password: '',
     password_confirmation: '',
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (!formData.token || !formData.email) {
+      setErrors({ general: 'Invalid reset link. Please request a new password reset.' });
+    }
+  }, [formData.token, formData.email]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,84 +36,80 @@ export default function Register() {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email.endsWith('@student.laverdad.edu.ph')) {
-      newErrors.email = ['Only @student.laverdad.edu.ph emails are allowed'];
-    }
-    if (formData.password !== formData.password_confirmation) {
-      newErrors.password_confirmation = ['Passwords do not match'];
-    }
     if (formData.password.length < 8) {
       newErrors.password = ['Password must be at least 8 characters long'];
     }
     if (!/[a-z]/.test(formData.password) || !/[A-Z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
       newErrors.password = ['Password must contain uppercase, lowercase, and numbers'];
     }
+    if (formData.password !== formData.password_confirmation) {
+      newErrors.password_confirmation = ['Passwords do not match'];
+    }
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setErrors({});
-    
+
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setIsLoading(false);
       return;
     }
 
     try {
-      const response = await axios.post('/api/register', {
-        name: formData.name,
+      const response = await axios.post('/api/reset-password', {
         email: formData.email,
+        token: formData.token,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
-      navigate('/login?registered=1');
+
+      setSuccessMessage(response.data.message);
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
-      console.error('Registration error:', error);
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
       } else {
-        setErrors({ general: 'Registration failed. Please try again.' });
+        setErrors({ general: 'Failed to reset password. Please try again.' });
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
-        <div className="mb-6 flex justify-center">
-          <img src="/images/logo.svg" alt="La Verdad Christian College Logo" className="h-20" />
-        </div>
-        <h2 className="mb-1 text-center text-2xl font-bold text-gray-800">Create Account</h2>
-        <p className="mb-6 text-center text-gray-600">Sign up to join La Verdad Herald</p>
+        <h2 className="mb-6 text-center text-3xl font-bold text-gray-800">
+          Reset Password
+        </h2>
+
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-800 text-center">{successMessage}</p>
+          </div>
+        )}
 
         {errors.general && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {errors.general}
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-800 text-center">{errors.general}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-700">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              autoComplete="name"
-              className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
-            />
-            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name[0]}</p>}
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">Email Address</label>
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700">
+              Email Address
+            </label>
             <input
               type="email"
               id="email"
@@ -112,16 +117,15 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               required
-              pattern="[a-zA-Z0-9._%+-]+@student\.laverdad\.edu\.ph"
-              title="Please use your @student.laverdad.edu.ph email address"
-              autoComplete="email"
-              className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+              readOnly
+              className="w-full rounded-md border border-gray-300 px-4 py-2 bg-gray-50 cursor-not-allowed"
             />
-            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email[0]}</p>}
           </div>
 
           <div className="mb-4">
-            <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700">Password</label>
+            <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700">
+              New Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -133,7 +137,7 @@ export default function Register() {
                 minLength={8}
                 pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}"
                 title="Password must contain at least 8 characters, including uppercase, lowercase, and numbers"
-                autoComplete="new-password"
+                placeholder="Enter new password"
                 className="w-full rounded-md border border-gray-300 px-4 py-2 pr-10 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
               />
               <button
@@ -157,7 +161,9 @@ export default function Register() {
           </div>
 
           <div className="mb-6">
-            <label htmlFor="password_confirmation" className="mb-2 block text-sm font-medium text-gray-700">Confirm Password</label>
+            <label htmlFor="password_confirmation" className="mb-2 block text-sm font-medium text-gray-700">
+              Confirm New Password
+            </label>
             <div className="relative">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -165,9 +171,9 @@ export default function Register() {
                 name="password_confirmation"
                 value={formData.password_confirmation}
                 onChange={handleChange}
-                onPaste={(e) => e.preventDefault()}
                 required
-                autoComplete="new-password"
+                placeholder="Confirm new password"
+                onPaste={(e) => e.preventDefault()}
                 className="w-full rounded-md border border-gray-300 px-4 py-2 pr-10 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
               />
               <button
@@ -192,15 +198,16 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={isLoading || !formData.token || !formData.email}
+            className="w-full rounded-md bg-cyan-700 px-4 py-2 text-white font-bold hover:bg-cyan-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign Up
+            {isLoading ? 'Resetting Password...' : 'Reset Password'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
+            Remember your password?{' '}
             <button
               type="button"
               onClick={() => navigate('/login')}

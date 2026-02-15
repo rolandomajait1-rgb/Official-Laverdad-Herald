@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 
 function RegisterComponent() {
   const navigate = useNavigate();
@@ -18,26 +18,48 @@ function RegisterComponent() {
     setError('');
     setSuccess('');
 
+    if (!email.endsWith('@student.laverdad.edu.ph')) {
+      setError('Only @student.laverdad.edu.ph email addresses are allowed to register.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
 
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Password must contain uppercase, lowercase, and numbers.');
+      return;
+    }
+
     try {
-      await axios.post('/api/register', { name, email, password, password_confirmation: confirmPassword });
-      setSuccess('Registration successful! Redirecting to home page...');
+      const response = await axios.post('/api/register', { 
+        name, 
+        email, 
+        password, 
+        password_confirmation: confirmPassword 
+      });
+      setSuccess('Registration successful! Please check your email to verify your account.');
       setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       setTimeout(() => {
-        window.location.href = '/home';
+        navigate('/login?registered=1');
       }, 2000);
     } catch (error) {
       if (error.response && error.response.data.errors) {
         const errors = error.response.data.errors;
         const firstError = Object.values(errors)[0][0];
         setError(firstError);
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
       } else {
         setError('Registration failed. Please try again.');
       }
@@ -97,6 +119,8 @@ function RegisterComponent() {
                 type="email"
                 autoComplete="email"
                 required
+                pattern="[a-zA-Z0-9._%+-]+@student\.laverdad\.edu\.ph"
+                title="Please use your @student.laverdad.edu.ph email address"
                 placeholder="Type your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -123,7 +147,9 @@ function RegisterComponent() {
                 placeholder="Type password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onPaste={(e) => e.preventDefault()}
+                minLength={8}
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}"
+                title="Password must contain at least 8 characters, including uppercase, lowercase, and numbers"
                 className="w-full px-3 py-2 pr-10 placeholder-gray-400 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
               <button

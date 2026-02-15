@@ -26,28 +26,38 @@ Route::middleware('auth:sanctum')->post('/team-members/update', [TeamMemberContr
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'loginApi']);
     Route::post('/register', [AuthController::class, 'registerApi']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPasswordApi']);
+    Route::post('/reset-password', [AuthController::class, 'resetPasswordApi']);
 });
 
 // Email Verification Routes
 Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-    $user = \App\Models\User::findOrFail($id);
-    
-    $frontendUrl = config('app.frontend_url');
+    try {
+        $user = \App\Models\User::findOrFail($id);
+        
+        $frontendUrl = config('app.frontend_url');
 
-    if (!hash_equals((string) $hash, hash('sha256', $user->getEmailForVerification()))) {
-        return redirect($frontendUrl . '/login?error=invalid_verification_link');
+        // Check if hash matches
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return redirect($frontendUrl . '/email-verified?error=invalid_verification_link');
+        }
+        
+        // Check if already verified
+        if ($user->hasVerifiedEmail()) {
+            return redirect($frontendUrl . '/email-verified?verified=1&message=already_verified');
+        }
+        
+        // Mark as verified
+        $user->markEmailAsVerified();
+        
+        return redirect($frontendUrl . '/email-verified?verified=1');
+    } catch (\Exception $e) {
+        \Log::error('Email verification error: ' . $e->getMessage());
+        return redirect(config('app.frontend_url') . '/email-verified?error=verification_failed');
     }
-    
-    if ($user->hasVerifiedEmail()) {
-        return redirect($frontendUrl . '/login?verified=1&message=already_verified');
-    }
-    
-    $user->markEmailAsVerified();
-    
-    return redirect($frontendUrl . '/login?verified=1');
 })->name('verification.verify');
 
-Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
+Route::middleware('throttle:3,1')->post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
 
 // Contact Form Routes
 Route::middleware('throttle:10,1')->post('/contact/feedback', [ContactController::class, 'sendFeedback']);

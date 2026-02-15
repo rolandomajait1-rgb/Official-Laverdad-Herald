@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,16 +12,27 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    if (params.get("registered") === "1") {
+      setSuccessMessage("Registration successful. Please check your email and verify your account before logging in.");
+    }
     if (params.get("verified") === "1") {
-      setSuccessMessage("Email verified successfully! You can now log in.");
+      const message = params.get("message");
+      if (message === "already_verified") {
+        setSuccessMessage("Your email is already verified. You can log in now.");
+      } else {
+        setSuccessMessage("Email verified successfully! You can now log in.");
+      }
     }
     if (params.get("error") === "invalid_verification_link") {
-      setErrors({ general: "Invalid or expired verification link." });
+      setErrors({ general: "Invalid or expired verification link. Please request a new one." });
     }
   }, [location]);
 
@@ -93,7 +104,11 @@ export default function Login() {
         }
       }, 1500);
     } catch (error) {
-      if (error.response && error.response.status === 401) {
+      if (error.response && error.response.status === 403 && error.response.data.requires_verification) {
+        setErrors({ general: error.response.data.message });
+        setShowResendVerification(true);
+        setResendEmail(formData.email);
+      } else if (error.response && error.response.status === 401) {
         setErrors({ general: "Invalid email or password. Please try again." });
       } else if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);
@@ -104,6 +119,20 @@ export default function Login() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      await axios.post("/api/email/resend-verification", { email: resendEmail });
+      setSuccessMessage("Verification email sent! Please check your inbox.");
+      setShowResendVerification(false);
+      setErrors({});
+    } catch (error) {
+      setErrors({ general: "Failed to resend verification email. Please try again." });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -231,7 +260,25 @@ export default function Login() {
           </div>
 
           {errors.general && (
-            <p className="mt-1 text-xs text-red-500">{errors.general}</p>
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800 text-center">{errors.general}</p>
+            </div>
+          )}
+
+          {showResendVerification && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-sm text-yellow-800 text-center mb-2">
+                Need a new verification link?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={isResending}
+                className="w-full rounded-md bg-yellow-600 px-4 py-2 text-white text-sm hover:bg-yellow-700 disabled:opacity-50"
+              >
+                {isResending ? "Sending..." : "Resend Verification Email"}
+              </button>
+            </div>
           )}
 
           {successMessage && (
