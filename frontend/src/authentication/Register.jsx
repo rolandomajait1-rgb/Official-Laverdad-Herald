@@ -11,6 +11,7 @@ export default function Register() {
     password_confirmation: '',
   });
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -53,7 +54,8 @@ export default function Register() {
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       });
-      navigate('/login?registered=1');
+      setSuccessMessage('Registration successful! Check your email to verify your account.');
+      setTimeout(() => navigate('/login?registered=1'), 2000);
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response?.data?.errors) {
@@ -73,6 +75,11 @@ export default function Register() {
           <img src="/src/assets/images/logo.svg" alt="La Verdad Christian College Logo" className="h-20" />
         </div>
         <h2 className="mb-1 text-center text-4xl font-serif text-gray-800">Register</h2>
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            {successMessage}
+          </div>
+        )}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {errors.general}
