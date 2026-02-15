@@ -31,32 +31,7 @@ Route::middleware('throttle:5,1')->group(function () {
 });
 
 // Email Verification Routes
-Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
-    try {
-        $user = \App\Models\User::findOrFail($id);
-        
-        $frontendUrl = config('app.frontend_url');
-
-        // Check if hash matches
-        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return redirect($frontendUrl . '/email-verified?error=invalid_verification_link');
-        }
-        
-        // Check if already verified
-        if ($user->hasVerifiedEmail()) {
-            return redirect($frontendUrl . '/email-verified?verified=1&message=already_verified');
-        }
-        
-        // Mark as verified
-        $user->markEmailAsVerified();
-        
-        return redirect($frontendUrl . '/email-verified?verified=1');
-    } catch (\Exception $e) {
-        \Log::error('Email verification error: ' . $e->getMessage());
-        return redirect(config('app.frontend_url') . '/email-verified?error=verification_failed');
-    }
-})->name('verification.verify');
-
+Route::get('/email/verify-token', [AuthController::class, 'verifyEmailToken'])->name('verification.verify.token');
 Route::middleware('throttle:3,1')->post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
 
 // Contact Form Routes

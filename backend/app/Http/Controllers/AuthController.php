@@ -42,23 +42,27 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($request->only('email', 'password'))) {
-            $user = Auth::user();
-            
-            if (is_null($user->email_verified_at)) {
-                Auth::logout();
-                return response()->json([
-                    'message' => 'Please verify your email before logging in. Check your inbox for verification link.',
-                    'requires_verification' => true
-                ], 403);
-            }
-            
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json(['token' => $token, 'role' => $user->role, 'user' => $user]);
+        $user = User::where('email', $request->email)->first();
+        
+        if (!$user) {
+            Hash::check($request->password, '$2y$12$dummyhashtopreventtimingattack');
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        return response()->json(['message' => 'Invalid credentials'], 401);
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        if (is_null($user->email_verified_at)) {
+            return response()->json([
+                'message' => 'Please verify your email before logging in. Check your inbox for verification link.',
+                'requires_verification' => true
+            ], 403);
+        }
+        
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json(['token' => $token, 'role' => $user->role, 'user' => $user]);
     }
 
 
@@ -105,7 +109,19 @@ class AuthController extends Controller
             'role' => 'user',
         ]);
 
-        $user->sendEmailVerificationNotification();
+        $token = bin2hex(random_bytes(32));
+        \DB::table('verification_tokens')->insert([
+            'user_id' => $user->id,
+            'token' => $token,
+            'expires_at' => now()->addHours(24),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
+        \Mail::send('emails.verify-email', ['user' => $user, 'verificationUrl' => $verificationUrl], function ($message) use ($user) {
+            $message->to($user->email)->subject('Verify Your Email Address');
+        });
 
         return response()->json([
             'message' => 'Registration successful! Please check your email to verify your account before logging in.',
@@ -174,23 +190,38 @@ class AuthController extends Controller
         return response()->json(['message' => 'Account deleted successfully']);
     }
 
-    public function verifyEmail(Request $request)
+    public function verifyEmailToken(Request $request)
     {
-        $user = User::find($request->route('id'));
+        $token = $request->query('token');
+        
+        if (!$token) {
+            return redirect(config('app.frontend_url') . '/login?error=invalid_token');
+        }
 
+        $verification = \DB::table('verification_tokens')
+            ->where('token', $token)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$verification) {
+            return redirect(config('app.frontend_url') . '/login?error=invalid_or_expired_token');
+        }
+
+        $user = User::find($verification->user_id);
+        
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return redirect(config('app.frontend_url') . '/login?error=user_not_found');
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
+            \DB::table('verification_tokens')->where('token', $token)->delete();
+            return redirect(config('app.frontend_url') . '/login?verified=1&message=already_verified');
         }
 
-        if ($user->markEmailAsVerified()) {
-            return response()->json(['message' => 'Email verified successfully! You can now log in.'], 200);
-        }
+        $user->markEmailAsVerified();
+        \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
 
-        return response()->json(['message' => 'Invalid verification link'], 400);
+        return redirect(config('app.frontend_url') . '/login?verified=1');
     }
 
     public function resendVerificationEmail(Request $request)
@@ -198,18 +229,28 @@ class AuthController extends Controller
         $request->validate(['email' => 'required|email']);
         
         $user = User::where('email', $request->email)->first();
-        
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+
+        if ($user && !$user->hasVerifiedEmail()) {
+            \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
+            
+            $token = bin2hex(random_bytes(32));
+            \DB::table('verification_tokens')->insert([
+                'user_id' => $user->id,
+                'token' => $token,
+                'expires_at' => now()->addHours(24),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
+            \Mail::send('emails.verify-email', ['user' => $user, 'verificationUrl' => $verificationUrl], function ($message) use ($user) {
+                $message->to($user->email)->subject('Verify Your Email Address');
+            });
         }
-        
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
-        }
-        
-        $user->sendEmailVerificationNotification();
-        
-        return response()->json(['message' => 'Verification email sent! Please check your inbox.'], 200);
+
+        return response()->json([
+            'message' => 'If an unverified account exists for that email, a verification email has been sent.'
+        ], 200);
     }
 
     public function forgotPasswordApi(Request $request)
