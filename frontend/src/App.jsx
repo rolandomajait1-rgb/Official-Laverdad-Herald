@@ -16,6 +16,7 @@ import EditArticle from './AdminDashboard/EditArticle';
 import Login from './authentication/Login';
 import Register from './authentication/Register';
 import ForgotPasswordPage from './authentication/ForgotPasswordPage';
+import ResetPasswordPage from './authentication/ResetPasswordPage';
 import About from './pages/About';
 import News from './categories/News';
 import Literary from './categories/Literary';
@@ -32,6 +33,7 @@ import AuthorProfile from './pages/AuthorProfile';
 
 import TagSearchResults from './pages/TagSearchResults';
 import VerifyEmail from './pages/VerifyEmail';
+import EmailVerified from './pages/EmailVerified';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Preloader from './components/Preloader';
@@ -270,6 +272,20 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/email-verified"
+          element={
+            <motion.div
+              initial="initial"
+              animate="in"
+              exit="out"
+              variants={pageVariants}
+              transition={pageTransition}
+            >
+              <EmailVerified />
+            </motion.div>
+          }
+        />
+        <Route
           path="/register"
           element={
             <motion.div
@@ -294,6 +310,20 @@ function AnimatedRoutes() {
               transition={pageTransition}
             >
               <ForgotPasswordPage />
+            </motion.div>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <motion.div
+              initial="initial"
+              animate="in"
+              exit="out"
+              variants={pageVariants}
+              transition={pageTransition}
+            >
+              <ResetPasswordPage />
             </motion.div>
           }
         />

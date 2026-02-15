@@ -104,6 +104,8 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               required
+              pattern="[a-zA-Z0-9._%+-]+@student\.laverdad\.edu\.ph"
+              title="Please use your @student.laverdad.edu.ph email address"
               placeholder='Enter your email'
               autoComplete="email"
               className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
