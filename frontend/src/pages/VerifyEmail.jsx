@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import axios from '../utils/axiosConfig';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -8,29 +9,16 @@ export default function VerifyEmail() {
   const [message, setMessage] = useState('Verifying your email...');
 
   useEffect(() => {
-    const id = searchParams.get('id');
-    const hash = searchParams.get('hash');
-    const expires = searchParams.get('expires');
-    const signature = searchParams.get('signature');
+    const token = searchParams.get('token');
 
-    if (!id || !hash) {
+    if (!token) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
       return;
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    const verificationUrl = new URL(`/api/email/verify/${id}/${hash}`, baseUrl);
-
-    if (expires) {
-      verificationUrl.searchParams.set('expires', expires);
-    }
-    if (signature) {
-      verificationUrl.searchParams.set('signature', signature);
-    }
-
-    // Redirect to backend verification endpoint
-    window.location.href = verificationUrl.toString();
+    window.location.href = `${baseUrl}/api/email/verify-token?token=${token}`;
   }, [searchParams]);
 
   return (
