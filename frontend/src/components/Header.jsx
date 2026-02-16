@@ -24,7 +24,7 @@ function Header() {
     <header
       className="flex w-full items-center px-8 py-6 bg-cover bg-right"
       style={{
-        backgroundImage: `linear-gradient(to right, #2a5a82 20%, rgba(42,90,130,0.2)), url('/src/assets/images/header.png')`
+        backgroundImage: `linear-gradient(to right, #2a5a82 20%, rgba(42,90,130,0.2)), url('/images/header.png')`
       }}
     >
 
@@ -36,7 +36,7 @@ function Header() {
         {/* Images */}
         <div className="flex items-center gap-6">
           <img
-            src="/src/assets/images/logo.svg"
+            src="/images/logo.svg"
             alt="La Verdad Logo"
             className="h-[70px] w-auto cursor-pointer"
             onClick={() => {
@@ -49,7 +49,7 @@ function Header() {
           />
 
           <img
-            src="/src/assets/images/la verdad herald.svg"
+            src="/images/la verdad herald.svg"
             alt="La Verdad Herald"
             className="h-[50px] w-auto cursor-pointer"
             onClick={() => {
@@ -76,7 +76,7 @@ function Header() {
             title="Admin Dashboard"
           >
             <img
-              src="/src/assets/dashboard.svg"
+              src="/images/dashboard.svg"
               alt="Admin Dashboard"
               className="h-[30px] w-auto brightness-0 invert pointer-events-none"
             />
