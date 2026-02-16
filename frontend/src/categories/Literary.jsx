@@ -138,7 +138,7 @@ export default function Literary() {
       <Header />
       <HeaderLink />
       <div className="bg-news-bg bg-cover bg-center h-20" style={{
-        backgroundImage: `linear-gradient(to right, #228B22 20%, rgba(34,139,34,0.2)), url('/src/assets/images/bg.jpg' )`
+        backgroundImage: `linear-gradient(to right, #228B22 20%, rgba(34,139,34,0.2)), url('/images/bg.jpg' )`
       }}>
         <h1 className="text-5xl font-bold text-white justify-center flex items-center h-full md-8">LITERARY</h1>
       </div>

@@ -17,13 +17,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const userRole = getUserRole();
   
-  // Debug: Check what's in localStorage
-  useEffect(() => {
-    console.log('=== HomePage Debug ===');
-    console.log('userRole:', userRole);
-    console.log('auth_token:', localStorage.getItem('auth_token'));
-    console.log('user_role:', localStorage.getItem('user_role'));
-  }, [userRole]);
   const [newsArticles, setNewsArticles] = useState([]);
   const [literaryArticles, setLiteraryArticles] = useState([]);
   const [specialsArticles, setSpecialsArticles] = useState([]);
