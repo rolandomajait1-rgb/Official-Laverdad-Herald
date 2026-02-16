@@ -119,7 +119,7 @@ export default function TagSearchResults() {
 
       <main className="grow">
         {/* Banner */}
-        <div className="text-white py-8 px-4 md:px-12 mb-8 shadow-inner" style={{backgroundImage: 'linear-gradient(to right, rgba(59, 130, 246, 0.5), rgba(165, 243, 252, 0.5)), url(/src/assets/images/bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
+        <div className="text-white py-8 px-4 md:px-12 mb-8 shadow-inner" style={{backgroundImage: 'linear-gradient(to right, rgba(59, 130, 246, 0.5), rgba(165, 243, 252, 0.5)), url(/images/bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
           <div className="container mx-auto flex justify-between items-center">
             <h2 className="text-4xl font-bold font-sans">#{tag || 'EarthquakePH'}</h2>
             <span className="font-medium bg-white/20 px-4 py-1 rounded-full text-sm backdrop-blur-sm">

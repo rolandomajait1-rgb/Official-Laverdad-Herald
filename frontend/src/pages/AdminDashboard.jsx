@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
   const handleDeleteArticle = (articleId) => {
     if (window.confirm('Are you sure you want to delete this article?')) {
-      axios.delete(`http://localhost:8000/api/articles/${articleId}`)
+      axios.delete(`/api/articles/${articleId}`)
         .then(() => {
           alert('Article deleted successfully!');
           window.location.reload();
