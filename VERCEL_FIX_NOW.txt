@@ -1,0 +1,41 @@
+═══════════════════════════════════════════════════════════════
+  VERCEL ENVIRONMENT VARIABLE FIX - DO THIS NOW (2 MINUTES)
+═══════════════════════════════════════════════════════════════
+
+YOUR PRODUCTION SITE IS TRYING TO CONNECT TO LOCALHOST!
+
+This is why you see: ERR_CONNECTION_REFUSED on localhost:8000
+
+───────────────────────────────────────────────────────────────
+
+FIX:
+
+1. Go to: https://vercel.com/dashboard
+
+2. Click on your project: official-laverdad-herald
+
+3. Click: Settings → Environment Variables
+
+4. Add this variable:
+
+   Name:  VITE_API_BASE_URL
+   Value: https://official-laverdad-herald.onrender.com
+   Environment: Production ✓
+
+5. Click "Save"
+
+6. Go to: Deployments tab
+
+7. Click the "..." menu on latest deployment
+
+8. Click "Redeploy"
+
+9. Wait 1-2 minutes
+
+10. Test your site again!
+
+───────────────────────────────────────────────────────────────
+
+DONE! Your production site will now connect to the production backend.
+
+═══════════════════════════════════════════════════════════════
