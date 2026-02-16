@@ -92,7 +92,7 @@ const ContactSection = ({ showFeedbackForm, setShowFeedbackForm }) => {
 
       {/* 1. Top Banner */}
        <div className="bg-news-bg bg-cover bg-center h-20" style={{
-          backgroundImage: `linear-gradient(to right, #2a5a82 20%, rgba(42,90,130,0.2)), url('/src/assets/images/bg.jpg' )`
+          backgroundImage: `linear-gradient(to right, #2a5a82 20%, rgba(42,90,130,0.2)), url('/images/bg.jpg' )`
         }}>
           <h1 className="text-5xl font-bold text-white justify-center flex items-center h-full md-8">CONTACT US</h1>
         </div>

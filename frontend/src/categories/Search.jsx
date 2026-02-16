@@ -139,7 +139,7 @@ export default function Search() {
         ) : query.trim().length > 2 ? (
           <section className="text-center text-gray-500 justify-center py-5 mt-20">
             <div className="flex justify-center mb-4">
-              <img src="/src/assets/images/logo.svg" alt="La Verdad Herald Logo" />
+              <img src="/images/logo.svg" alt="La Verdad Herald Logo" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-4">
               No articles found for "{query}"</h1>
@@ -148,7 +148,7 @@ export default function Search() {
         ) : (
           <section className="text-center text-gray-500 justify-center py-5 mt-20">
             <div className="flex justify-center mb-4">
-              <img src="/src/assets/images/logo.svg" alt="La Verdad Herald Logo" />
+              <img src="/images/logo.svg" alt="La Verdad Herald Logo" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-4">
               Start Searching</h1>
