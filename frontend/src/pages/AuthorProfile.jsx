@@ -9,7 +9,7 @@ const AuthorHero = ({ author, articles }) => (
   <div className="relative w-full h-80 md:h-60 bg-[#3a6080] overflow-hidden flex items-center">
     <div className="absolute inset-0">
       <img 
-        src="/src/assets/images/bg.jpg"
+        src="/images/bg.jpg"
         alt="Background" 
         className="w-full h-full object-cover opacity-40 mix-blend-overlay"
       />
@@ -19,7 +19,7 @@ const AuthorHero = ({ author, articles }) => (
     <div className="container mx-auto px-4 md:px-12 relative z-10 flex flex-col md:flex-row items-center justify-between w-full">
       <div className="flex items-center gap-6 mb-4 md:mb-0">
         <img 
-          src="/src/assets/images/logo.svg" 
+          src="/images/logo.svg" 
           alt="Logo" 
           className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[#d4af37] shadow-2xl object-cover"
         />

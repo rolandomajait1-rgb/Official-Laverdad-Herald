@@ -72,7 +72,7 @@ export default function Register() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
         <div className="mb-6 flex justify-center">
-          <img src="/src/assets/images/logo.svg" alt="La Verdad Christian College Logo" className="h-20" />
+          <img src="/images/logo.svg" alt="La Verdad Christian College Logo" className="h-20" />
         </div>
         <h2 className="mb-1 text-center text-4xl font-serif text-gray-800">Register</h2>
         {successMessage && (
