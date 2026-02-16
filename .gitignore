@@ -20,3 +20,8 @@ Thumbs.db
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .github/instructions/snyk_rules.instructions.md
+
+# Credentials and setup files with secrets
+RENDER_CREDENTIALS.txt
+QUICK_FIX_CHECKLIST.txt
+RENDER_SETUP_FINAL.md
