@@ -3,25 +3,31 @@
 require __DIR__.'/vendor/autoload.php';
 
 $app = require_once __DIR__.'/bootstrap/app.php';
-$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-echo "=== All Users ===\n\n";
+echo "═══════════════════════════════════════════════════════════════\n";
+echo "  ALL USERS IN DATABASE\n";
+echo "═══════════════════════════════════════════════════════════════\n\n";
 
-$users = App\Models\User::all(['id', 'name', 'email', 'email_verified_at']);
+$users = \App\Models\User::all();
 
-foreach ($users as $user) {
-    $verified = $user->email_verified_at ? '✓ Verified' : '✗ Not Verified';
-    echo "ID: {$user->id} | {$user->name} | {$user->email} | {$verified}\n";
-}
-
-echo "\n=== Student Users ===\n\n";
-
-$studentUsers = App\Models\User::where('email', 'LIKE', '%@student.laverdad.edu.ph')->get(['id', 'name', 'email']);
-
-if ($studentUsers->isEmpty()) {
-    echo "No student users found.\n";
+if ($users->isEmpty()) {
+    echo "No users found in database.\n";
 } else {
-    foreach ($studentUsers as $user) {
-        echo "ID: {$user->id} | {$user->name} | {$user->email}\n";
+    foreach ($users as $user) {
+        $verified = $user->email_verified_at ? '✓ VERIFIED' : '✗ NOT VERIFIED';
+        $verifiedDate = $user->email_verified_at ? " (on {$user->email_verified_at})" : '';
+        
+        echo "Email: {$user->email}\n";
+        echo "Name:  {$user->name}\n";
+        echo "Role:  {$user->role}\n";
+        echo "Status: {$verified}{$verifiedDate}\n";
+        echo "───────────────────────────────────────────────────────────────\n";
     }
+    
+    echo "\nTotal users: " . $users->count() . "\n";
+    echo "Verified: " . $users->whereNotNull('email_verified_at')->count() . "\n";
+    echo "Unverified: " . $users->whereNull('email_verified_at')->count() . "\n";
 }
+
+echo "\n═══════════════════════════════════════════════════════════════\n";
