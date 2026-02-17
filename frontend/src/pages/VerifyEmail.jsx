@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 
+import { getApiUrl } from '../utils/apiConfig';
+
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17,8 +19,7 @@ export default function VerifyEmail() {
       return;
     }
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    window.location.href = `${baseUrl}/api/email/verify-token?token=${token}`;
+    window.location.href = getApiUrl(`/api/email/verify-token?token=${token}`);
   }, [searchParams]);
 
   return (

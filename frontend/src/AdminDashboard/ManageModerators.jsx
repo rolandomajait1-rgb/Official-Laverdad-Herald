@@ -6,6 +6,8 @@ import { AdminSidebar } from "../components/AdminSidebar";
 import Navigation from "../components/HeaderLink";
 import { getUserRole } from '../utils/auth';
 
+import axios from '../utils/axiosConfig';
+
 export default function ManageModerators() {
   const [moderators, setModerators] = useState([]);
   const [email, setEmail] = useState('');
@@ -29,15 +31,8 @@ export default function ManageModerators() {
 
   const fetchModerators = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/admin/moderators', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      setModerators(data || []);
+      const response = await axios.get('/api/admin/moderators');
+      setModerators(response.data || []);
     } catch (error) {
       console.error('Error fetching moderators:', error);
     } finally {
@@ -52,17 +47,9 @@ export default function ManageModerators() {
     }
 
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/admin/moderators', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
+      const response = await axios.post('/api/admin/moderators', { email });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setEmail('');
         fetchModerators();
         alert('Moderator added successfully!');

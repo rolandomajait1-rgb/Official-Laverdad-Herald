@@ -13,6 +13,8 @@ import { FiExternalLink } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../utils/auth';
 
+import axios from '../utils/axiosConfig';
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [newsArticles, setNewsArticles] = useState([]);
@@ -60,8 +62,8 @@ export default function AdminDashboard() {
       try {
         const categories = ['news', 'literary', 'specials', 'opinion', 'art', 'features', 'sports'];
         const promises = categories.map(category =>
-          fetch(`http://localhost:8000/api/categories/${category}/articles`)
-            .then(response => response.json())
+          axios.get(`/api/categories/${category}/articles`)
+            .then(response => response.data)
         );
 
         const responses = await Promise.all(promises);
