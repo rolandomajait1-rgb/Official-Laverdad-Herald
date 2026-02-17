@@ -53,7 +53,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        Auth::login($user);
+
         if (is_null($user->email_verified_at)) {
+            Auth::logout();
             return response()->json([
                 'message' => 'Please verify your email before logging in. Check your inbox for verification link.',
                 'requires_verification' => true
@@ -98,8 +101,12 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|unique:users|ends_with:@student.laverdad.edu.ph',
             'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
+        ], [
+            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses are allowed to register.',
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
+            'password.min' => 'Password must be at least 8 characters long.',
         ]);
 
         $user = User::create([
@@ -188,6 +195,32 @@ class AuthController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Account deleted successfully']);
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $user = User::find($request->route('id'));
+
+        if (!$user) {
+            return redirect(config('app.frontend_url') . '/login?error=user_not_found');
+        }
+
+        if (! $request->hasValidSignature()) {
+            return redirect(config('app.frontend_url') . '/login?error=invalid_verification_link');
+        }
+
+        if (! hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
+            return redirect(config('app.frontend_url') . '/login?error=invalid_verification_link');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified'], 200);
+        }
+
+        $user->markEmailAsVerified();
+        \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
+
+        return response()->json(['message' => 'Email verified successfully! You can now log in.'], 200);
     }
 
     public function verifyEmailToken(Request $request)

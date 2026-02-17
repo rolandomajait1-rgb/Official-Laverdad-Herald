@@ -32,6 +32,7 @@ Route::middleware('throttle:5,1')->group(function () {
 
 // Email Verification Routes
 Route::get('/email/verify-token', [AuthController::class, 'verifyEmailToken'])->name('verification.verify.token');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
 Route::middleware('throttle:3,1')->post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
 
 // Contact Form Routes
