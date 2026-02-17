@@ -1,0 +1,51 @@
+═══════════════════════════════════════════════════════════════
+  YOUR PRODUCTION SITE IS BROKEN - FIX IN 3 MINUTES
+═══════════════════════════════════════════════════════════════
+
+ERROR: Production site trying to connect to localhost:8000
+CAUSE: Missing environment variable in Vercel
+
+───────────────────────────────────────────────────────────────
+
+STEP 1: Go to Vercel
+https://vercel.com/dashboard
+
+STEP 2: Click your project
+"official-laverdad-herald" or similar
+
+STEP 3: Click Settings (top menu)
+
+STEP 4: Click "Environment Variables" (left sidebar)
+
+STEP 5: Click "Add New" button
+
+STEP 6: Fill in:
+┌─────────────────────────────────────────────────────────────┐
+│ Key:   VITE_API_BASE_URL                                    │
+│                                                             │
+│ Value: https://official-laverdad-herald.onrender.com       │
+│                                                             │
+│ Environment: ☑ Production                                  │
+└─────────────────────────────────────────────────────────────┘
+
+STEP 7: Click "Save"
+
+STEP 8: Go to "Deployments" tab (top menu)
+
+STEP 9: Click "..." menu on latest deployment
+
+STEP 10: Click "Redeploy"
+
+STEP 11: Wait 1-2 minutes
+
+STEP 12: Refresh your production site
+
+───────────────────────────────────────────────────────────────
+
+DONE! Your site will now connect to the production backend.
+
+═══════════════════════════════════════════════════════════════
+
+IMPORTANT: Do this NOW or your production site won't work!
+
+═══════════════════════════════════════════════════════════════

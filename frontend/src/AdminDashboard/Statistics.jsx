@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import { AdminSidebar } from "../components/AdminSidebar";
 import HeaderLink from "../components/HeaderLink";
 import { getUserRole } from '../utils/auth';
+import axios from '../utils/axiosConfig';
 
 export default function Statistics({ onResetData }) {
   const [stats, setStats] = useState([
@@ -29,19 +30,9 @@ export default function Statistics({ onResetData }) {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/admin/dashboard-stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.get('/api/admin/dashboard-stats');
       
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} - Backend endpoint may not be implemented`);
-      }
-      
-      const data = await response.json();
+      const data = response.data;
       setStats([
         { label: "Registered Users", value: data.users || 0, icon: <IconUser size={38} /> },
         { label: "Total Views", value: data.views || 0, icon: <IconEye size={38} /> },
@@ -58,20 +49,8 @@ export default function Statistics({ onResetData }) {
 
   const fetchRecentActivity = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/admin/recent-activity', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setRecentActivity(data);
+      const response = await axios.get('/api/admin/recent-activity');
+      setRecentActivity(response.data);
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     }
