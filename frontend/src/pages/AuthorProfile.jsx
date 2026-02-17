@@ -68,6 +68,8 @@ const ArticleCard = ({ article, onClick, navigate }) => (
   </div>
 );
 
+import axios from '../utils/axiosConfig';
+
 export default function AuthorProfile() {
   const { authorName } = useParams();
   const navigate = useNavigate();
@@ -79,16 +81,10 @@ export default function AuthorProfile() {
     const fetchAuthorData = async () => {
       try {
         console.log('Fetching data for author:', authorName);
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`http://localhost:8000/api/authors/${encodeURIComponent(authorName)}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await axios.get(`/api/authors/${encodeURIComponent(authorName)}`);
         
         console.log('Response status:', response.status);
-        const data = await response.json();
+        const data = response.data;
         console.log('Response data:', data);
         
         if (response.ok) {
