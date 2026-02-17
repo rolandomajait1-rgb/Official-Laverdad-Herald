@@ -6,6 +6,8 @@ import Header from "../components/Header";
 import { AdminSidebar } from "../components/AdminSidebar";
 import { getUserRole } from '../utils/auth';
 
+import axios from '../utils/axiosConfig';
+
 export default function EditArticleInline() {
   const navigate = useNavigate();
   const { id } = useParams();
