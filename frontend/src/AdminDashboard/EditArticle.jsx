@@ -5,6 +5,9 @@ import DOMPurify from 'dompurify';
 import Header from "../components/Header";
 import Navigation from '../components/HeaderLink';
 
+import axios from '../utils/axiosConfig';
+import { getStorageUrl } from '../utils/apiConfig';
+
 export default function EditArticle() {
   const navigate = useNavigate();
   const { id } = useParams();

@@ -62,6 +62,8 @@ const DraftItem = ({ id, title, category, date, summary, author, featuredImage, 
   </div>
 );
 
+import axios from '../utils/axiosConfig';
+
 export default function DraftArticles() {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);

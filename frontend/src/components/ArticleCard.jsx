@@ -4,6 +4,7 @@ import { FaPencilAlt, FaTrash, FaCalendar } from 'react-icons/fa';
 import { Heart, Share2 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { isAdmin, isModerator, deleteArticle, getAuthToken } from '../utils/auth';
+import { getStorageUrl } from '../utils/apiConfig';
 
 const getUserRole = () => {
   return localStorage.getItem('user_role');
@@ -34,7 +35,7 @@ const ArticleCard = ({ featured_image, categories, published_at, title, excerpt,
   // Handle both prop formats for backward compatibility
   const finalImageUrl = imageUrl || 
     (featured_image ? 
-      (featured_image.startsWith('http') ? featured_image : `http://localhost:8000/storage/${featured_image}`) 
+      (featured_image.startsWith('http') ? featured_image : getStorageUrl(`/storage/${featured_image}`)) 
       : 'https://via.placeholder.com/300x200/e2e8f0/64748b?text=No+Image');
   const finalCategory = category || (categories && categories.length > 0 ? categories[0].name : 'Uncategorized');
   const finalDate = date || (published_at ? new Date(published_at).toLocaleDateString('en-US', {
