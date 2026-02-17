@@ -62,12 +62,8 @@ const MembershipFormContent = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8000/api/contact/join-herald', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (response.ok) {
+      const response = await axios.post('/api/contact/join-herald', formData);
+      if (response.status === 200) {
         setSubmitSuccess(true);
         alert('Application submitted successfully!');
         navigate('/contact-us');
@@ -380,6 +376,8 @@ const MembershipFormContent = () => {
     </div>
   );
 };
+
+import axios from '../utils/axiosConfig';
 
 export default function MembershipForm() {
   return (
