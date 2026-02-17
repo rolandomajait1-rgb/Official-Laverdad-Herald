@@ -8,11 +8,9 @@ import EmptyState from '../components/EmptyState';
 import Navigation from '../components/HeaderLink';
 import Feedback from '../components/Feedback';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholder';
-import axios from 'axios';
 import { FiExternalLink } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { getUserRole } from '../utils/auth';
-
 import axios from '../utils/axiosConfig';
 
 export default function AdminDashboard() {
