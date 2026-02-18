@@ -162,11 +162,25 @@ export default function CreateArticle() {
       navigate('/admin');
     } catch (error) {
       console.error('Publish error:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error ||
-                          (error.response?.data?.errors ? Object.values(error.response.data.errors).flat().join(', ') : null) ||
-                          error.message;
-      alert(`Error: ${errorMessage}`);
+      console.error('Error response:', error.response?.data);
+      
+      let errorMessage = 'Failed to publish article. ';
+      
+      if (error.response?.data?.errors) {
+        // Laravel validation errors
+        const errors = error.response.data.errors;
+        errorMessage += Object.entries(errors)
+          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+          .join('\n');
+      } else if (error.response?.data?.message) {
+        errorMessage += error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage += error.response.data.error;
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsPublishing(false);
     }
@@ -174,8 +188,6 @@ export default function CreateArticle() {
   
   const dashboardTitle = getUserRole() === 'moderator' ? 'MODERATOR | Dashboard' : 'ADMIN | Dashboard';
   const isMod = getUserRole() === 'moderator';
-  
-  console.log('CreateArticle - Role:', getUserRole(), 'isMod:', isMod);
   
   useEffect(() => {
     document.title = dashboardTitle;
