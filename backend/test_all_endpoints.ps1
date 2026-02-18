@@ -72,6 +72,6 @@ Write-Host ""
 Write-Host "=== Summary ===" -ForegroundColor Cyan
 $ok = ($results | Where-Object { $_.result -eq "OK" } | Measure-Object).Count
 $auth = ($results | Where-Object { $_.result -eq "AUTH" } | Measure-Object).Count
-$error = ($results | Where-Object { $_.result -eq "ERROR" } | Measure-Object).Count
-Write-Host "OK: $ok | AUTH: $auth | ERRORS: $error" -ForegroundColor White
+$errorCount = ($results | Where-Object { $_.result -eq "ERROR" } | Measure-Object).Count
+Write-Host "OK: $ok | AUTH: $auth | ERRORS: $errorCount" -ForegroundColor White
 

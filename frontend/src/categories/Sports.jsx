@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import getCategoryColor from '../utils/getCategoryColor';
 import { Calendar, Pencil, Trash2 } from 'lucide-react';
 import Header from '../components/Header';
@@ -109,7 +109,7 @@ export default function Sports() {
   const handleDelete = async (articleId) => {
     if (window.confirm('Are you sure you want to delete this article?')) {
       try {
-        await axios.delete(`/api/articles/id/${articleId}`);
+        await axios.delete(`/api/articles/${articleId}`);
         setArticles(articles.filter(article => article.id !== articleId));
         alert('Article deleted successfully!');
       } catch (err) {
@@ -437,3 +437,5 @@ export default function Sports() {
     </div>
   );
 }
+
+

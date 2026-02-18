@@ -9,7 +9,7 @@ import { getStorageUrl } from '../utils/apiConfig';
 const getUserRole = () => {
   return localStorage.getItem('user_role');
 };
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import getCategoryColor from '../utils/getCategoryColor';
 
 const ArticleCard = ({ featured_image, categories, published_at, title, excerpt, author, imageUrl, category, date, snippet, isPublished = true, isLarge = false, isMedium = false, horizontal = false, className = '', onClick, onEdit, onDelete, articleId, slug, showRelated = false }) => {

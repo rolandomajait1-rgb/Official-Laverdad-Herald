@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import DOMPurify from 'dompurify';
 import { Pencil, Trash2, Heart, Share2, Link } from 'lucide-react';
 import Header from '../components/Header';

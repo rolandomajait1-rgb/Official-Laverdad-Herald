@@ -47,35 +47,22 @@ export default function ManageModerators() {
     }
 
     try {
-      const response = await axios.post('/api/admin/moderators', { email });
-
-      if (response.status === 200) {
-        setEmail('');
-        fetchModerators();
-        alert('Moderator added successfully!');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to add moderator');
-      }
+      await axios.post('/api/admin/moderators', { email });
+      setEmail('');
+      fetchModerators();
+      alert('Moderator added successfully!');
     } catch (error) {
       console.error('Error adding moderator:', error);
-      alert('Failed to add moderator');
+      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to add moderator');
     }
   };
 
   const removeModerator = async (moderatorId) => {
     if (window.confirm('Are you sure you want to remove this moderator?')) {
       try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`http://localhost:8000/api/admin/moderators/${moderatorId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await axios.delete(`/api/admin/moderators/${moderatorId}`);
 
-        if (response.ok) {
+        if (response.status >= 200 && response.status < 300) {
           setModerators(prev => prev.filter(mod => mod.id !== moderatorId));
           alert('Moderator removed successfully!');
         }

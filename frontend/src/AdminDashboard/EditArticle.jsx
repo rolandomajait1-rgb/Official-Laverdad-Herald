@@ -26,40 +26,20 @@ export default function EditArticle() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        console.log('Fetching article with ID:', id);
-        const token = localStorage.getItem('auth_token');
-        console.log('Using token:', token ? 'Token exists' : 'No token');
-        
-        const response = await fetch(`http://localhost:8000/api/articles/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-        
-        console.log('Response status:', response.status);
-        
-        if (response.ok) {
-          const article = await response.json();
-          console.log('Article data:', article);
-          setTitle(article.title || "");
-          setAuthor(typeof article.author === 'string' ? article.author : (article.author?.name || ""));
-          setCategory(article.categories?.[0]?.name || "");
-          const tagsString = Array.isArray(article.tags) 
-            ? article.tags.map(tag => tag.name || tag).join(', ')
-            : (article.tags || '');
-          setTags(tagsString);
-          setContent(DOMPurify.sanitize(article.content || ""));
-          setCurrentImage(article.featured_image || null);
-        } else {
-          const errorText = await response.text();
-          console.error('API Error:', response.status, errorText);
-          alert(`Failed to load article: ${response.status}`);
-        }
+        const response = await axios.get(`/api/articles/${id}`);
+        const article = response.data;
+        setTitle(article.title || "");
+        setAuthor(typeof article.author === 'string' ? article.author : (article.author?.name || article.author?.user?.name || ""));
+        setCategory(article.categories?.[0]?.name || "");
+        const tagsString = Array.isArray(article.tags)
+          ? article.tags.map(tag => tag.name || tag).join(', ')
+          : (article.tags || '');
+        setTags(tagsString);
+        setContent(DOMPurify.sanitize(article.content || ""));
+        setCurrentImage(article.featured_image || null);
       } catch (error) {
         console.error('Error fetching article:', error);
-        alert('Network error while loading article');
+        alert(`Failed to load article: ${error.response?.status || 'network error'}`);
       } finally {
         setLoading(false);
       }
@@ -114,30 +94,17 @@ export default function EditArticle() {
         formData.append('featured_image', image);
       }
 
-      console.log('Sending update request for article ID:', id);
-      console.log('FormData contents:', Object.fromEntries(formData));
-      
-      const response = await fetch(`http://localhost:8000/api/articles/${id}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: formData,
-      });
+      const response = await axios.post(`/api/articles/${id}`, formData);
 
-      console.log('Response status:', response.status);
-      
-      if (response.ok) {
+      if (response.status >= 200 && response.status < 300) {
         alert("Article updated successfully!");
         navigate(-1);
       } else {
-        const errorText = await response.text();
-        console.log('Error response:', errorText);
-        throw new Error(`Failed to update article: ${response.status} - ${errorText}`);
+        throw new Error(`Failed to update article: ${response.status}`);
       }
     } catch (error) {
       console.error('Update error:', error);
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.error || error.response?.data?.message || error.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -204,7 +171,13 @@ export default function EditArticle() {
                   <img
                     src={image ? URL.createObjectURL(image) : 
                       (currentImage ? 
-                        (currentImage.startsWith('http') ? currentImage : `http://localhost:8000/storage/${currentImage}`) 
+                        getStorageUrl(
+                          currentImage.startsWith('http')
+                            ? currentImage
+                            : (currentImage.startsWith('/storage/')
+                                ? currentImage
+                                : `/storage/${String(currentImage).replace(/^\/+/, '')}`)
+                        )
                         : 'https://via.placeholder.com/300x200/e2e8f0/64748b?text=No+Image')}
                     alt="Cover Preview"
                     className="max-w-full max-h-64 rounded-lg object-cover"

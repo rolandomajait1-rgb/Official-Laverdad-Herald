@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import DOMPurify from 'dompurify';
 import TeamMemberCard from '../components/TeamCard';
 import Header from '../components/Header';
@@ -183,3 +183,4 @@ const About  = () => {
 };
 
 export default About;
+

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, ThumbsUp, Share2, Link as LinkIcon } from 'lucide-react';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import { isAdmin, isModerator } from '../utils/auth';
 
 const ArticleHeader = ({ article, navigate }) => (

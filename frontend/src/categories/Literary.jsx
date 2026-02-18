@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import getCategoryColor from '../utils/getCategoryColor';
 import { Calendar, Pencil, Trash2 } from 'lucide-react';
 import Header from '../components/Header';
@@ -396,3 +396,4 @@ export default function Literary() {
     </div>
   );
 }
+
