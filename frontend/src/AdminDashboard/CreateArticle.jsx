@@ -93,7 +93,13 @@ export default function CreateArticle() {
         ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
         : '';
       formData.append('content', formattedContent);
-      formData.append('tags', tags.map(tag => tag.replace('#', '')).join(','));
+      
+      // Send tags as array, not comma-separated string
+      const tagArray = tags.map(tag => tag.replace('#', ''));
+      tagArray.forEach(tag => {
+        formData.append('tags[]', tag);
+      });
+      
       formData.append('status', 'draft');
       formData.append('author_name', authorName);
 
@@ -132,7 +138,13 @@ export default function CreateArticle() {
         ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
         : '';
       formData.append('content', formattedContent);
-      formData.append('tags', tags.map(tag => tag.replace('#', '')).join(','));
+      
+      // Send tags as array, not comma-separated string
+      const tagArray = tags.map(tag => tag.replace('#', ''));
+      tagArray.forEach(tag => {
+        formData.append('tags[]', tag);
+      });
+      
       formData.append('status', 'published');
       formData.append('author_name', authorName);
 
