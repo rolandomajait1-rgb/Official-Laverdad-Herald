@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, LogOut, Edit2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import HeaderLink from '../components/HeaderLink';

@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { isAdmin, getUserRole } from "../utils/auth";
 import { FaCalendar } from "react-icons/fa";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import getCategoryColor from "../utils/getCategoryColor";
 
 export default function ArticleCard({

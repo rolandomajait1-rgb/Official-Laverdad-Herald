@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import ArticleCard from './ArticleCard';
 import { PLACEHOLDER_IMAGE } from '../utils/placeholder';
 

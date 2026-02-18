@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ThumbsUp, Share2, Link as LinkIcon, Pencil, Trash2, Calendar } from 'lucide-react';
-import axios from 'axios';
+import axios from '../utils/axiosConfig';
 import { isAdmin, isModerator } from '../utils/auth';
 
 const ArticleHeader = ({ article, navigate }) => (
@@ -149,18 +149,17 @@ export default function ArticleDetail() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await axios.get(`/api/articles/slug/${slug}`);
+        const response = await axios.get(`/api/articles/by-slug/${slug}`);
         const article = response.data;
         setCurrentArticle(article);
         
         // Fetch related articles from the same category
         if (article.categories && article.categories.length > 0) {
           const categoryName = article.categories[0].name;
-          const relatedResponse = await axios.get('/api/articles', {
-            params: { category: categoryName.toLowerCase(), limit: 6}
-          });
+          const relatedResponse = await axios.get(`/api/categories/${encodeURIComponent(categoryName)}/articles`);
+          const relatedData = relatedResponse.data?.data || [];
           // Filter out the current article from related articles
-          const filtered = relatedResponse.data.data.filter(a => a.id !== article.id).slice(0, 3);
+          const filtered = relatedData.filter(a => a.id !== article.id).slice(0, 3);
           setRelatedArticles(filtered);
         }
       } catch (error) {

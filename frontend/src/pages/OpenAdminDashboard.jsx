@@ -7,31 +7,7 @@ import { getUserRole } from '../utils/auth';
 import Navigation from "../components/HeaderLink";
 import Statistics from "../AdminDashboard/Statistics";
 
-import { getApiUrl } from '../utils/apiConfig';
-
 export default function OpenAdminDashboard() {
-  const resetData = async () => {
-    if (window.confirm('Are you sure you want to reset all test data? This will delete all articles and interactions.')) {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(getApiUrl('/admin/reset-data'), {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          alert('Data reset successfully!');
-        }
-      } catch (error) {
-        console.error('Error resetting data:', error);
-        alert('Failed to reset data');
-      }
-    }
-  };
-
   useEffect(() => {
     document.title = getUserRole() === 'moderator' ? 'Moderator | Dashboard' : 'Admin | Dashboard';
   }, []);
@@ -62,7 +38,7 @@ export default function OpenAdminDashboard() {
           const filtered = getUserRole() === 'moderator' ? sidebarLinks.filter(l => l.label !== 'Manage Moderators') : sidebarLinks;
           return <AdminSidebar links={filtered} />;
         })()}
-        <Statistics onResetData={resetData} />
+        <Statistics />
       </div>
     </div>
   );

@@ -4,8 +4,7 @@ import { Provider } from 'react-redux'
 import { store } from './store/store'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary';
-import './utils/axiosConfig';
-import axios from 'axios';
+import axios from './utils/axiosConfig';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 axios.defaults.baseURL = BASE_URL;

@@ -33,22 +33,13 @@ export default function EditArticleInline() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`http://localhost:8000/api/articles/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const article = await response.json();
-          setTitle(article.title || '');
-          setContent(article.content || '');
-          setAuthor(article.author?.name || '');
-          setCategory(article.categories?.[0]?.name || '');
-          setTags(article.tags?.map(tag => tag.name).join(', ') || '');
-        }
+        const response = await axios.get(`/api/articles/${id}`);
+        const article = response.data;
+        setTitle(article.title || '');
+        setContent(article.content || '');
+        setAuthor(article.author?.name || article.author?.user?.name || '');
+        setCategory(article.categories?.[0]?.name || '');
+        setTags(article.tags?.map(tag => tag.name).join(', ') || '');
       } catch (error) {
         console.error('Error fetching article:', error);
       } finally {
@@ -86,6 +77,7 @@ export default function EditArticleInline() {
     setIsUpdating(true);
     try {
       const formData = new FormData();
+      formData.append('_method', 'PUT');
       formData.append('title', title);
       formData.append('category', category);
       formData.append('content', content);
@@ -96,26 +88,17 @@ export default function EditArticleInline() {
         formData.append('featured_image', image);
       }
 
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`http://localhost:8000/api/articles/${id}`, {
-        method: 'PUT',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await axios.post(`/api/articles/${id}`, formData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update article');
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error('Failed to update article');
       }
 
       alert("Article updated successfully!");
       navigate(-1); // Go back to previous page
     } catch (error) {
       console.error('Update error:', error);
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.response?.data?.error || error.response?.data?.message || error.message}`);
     } finally {
       setIsUpdating(false);
     }

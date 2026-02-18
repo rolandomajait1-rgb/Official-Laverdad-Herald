@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import { AdminSidebar } from "../components/AdminSidebar";
 import { getUserRole } from '../utils/auth';
 import Navigation from "../components/HeaderLink";
+import axios from '../utils/axiosConfig';
 
 const DraftItem = ({ id, title, category, date, summary, author, featuredImage, onEdit, onDelete, onPublish }) => (
   <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -62,8 +63,6 @@ const DraftItem = ({ id, title, category, date, summary, author, featuredImage, 
   </div>
 );
 
-import axios from '../utils/axiosConfig';
-
 export default function DraftArticles() {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,20 +85,13 @@ export default function DraftArticles() {
 
   const fetchDrafts = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8000/api/articles?status=draft', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await axios.get('/api/articles', {
+        params: {
+          status: 'draft',
+          limit: 50,
+        },
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setDrafts(data || []);
+      setDrafts(response.data?.data || []);
     } catch (error) {
       console.error('Error fetching drafts:', error);
       setDrafts([]);
@@ -115,23 +107,12 @@ export default function DraftArticles() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this draft?')) {
       try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`http://localhost:8000/api/articles/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        console.log('Delete response status:', response.status);
-        
-        if (response.ok) {
+        const response = await axios.delete(`/api/articles/${id}`);
+
+        if (response.status >= 200 && response.status < 300) {
           fetchDrafts();
           alert('Draft deleted successfully!');
         } else {
-          const errorText = await response.text();
-          console.error('Delete error:', errorText);
           alert(`Delete failed: ${response.status}`);
         }
       } catch (error) {
@@ -144,31 +125,41 @@ export default function DraftArticles() {
   const handlePublish = async (id) => {
     if (window.confirm('Are you sure you want to publish this article?')) {
       try {
-        const token = localStorage.getItem('auth_token');
-        console.log('Publishing article', id, 'with token:', token ? 'present' : 'missing');
-        
-        const response = await fetch(`http://localhost:8000/api/test-publish/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: 'published' })
+        const draft = drafts.find((item) => item.id === id);
+        if (!draft) {
+          alert('Draft not found.');
+          return;
+        }
+
+        const category = draft.categories?.[0]?.name || '';
+        const authorName = draft.author?.user?.name || draft.author?.name || '';
+        const tags = Array.isArray(draft.tags)
+          ? draft.tags.map((tag) => tag.name || tag).join(', ')
+          : '';
+
+        if (!category || !authorName || !tags) {
+          alert('Draft is missing category, author, or tags. Open edit first, then publish.');
+          return;
+        }
+
+        const response = await axios.put(`/api/articles/${id}`, {
+          title: draft.title,
+          content: draft.content,
+          category,
+          tags,
+          author: authorName,
+          status: 'published',
         });
-        
-        console.log('Publish response status:', response.status);
-        
-        if (response.ok) {
+
+        if (response.status >= 200 && response.status < 300) {
           fetchDrafts();
           alert('Article published successfully!');
         } else {
-          const errorText = await response.text();
-          console.error('Publish error response:', errorText);
-          alert(`Publish failed: ${response.status} - ${errorText}`);
+          alert(`Publish failed: ${response.status}`);
         }
       } catch (error) {
         console.error('Error publishing article:', error);
-        alert('Failed to publish article: ' + error.message);
+        alert(error.response?.data?.error || error.response?.data?.message || `Failed to publish article: ${error.message}`);
       }
     }
   };
