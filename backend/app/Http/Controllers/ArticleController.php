@@ -111,7 +111,16 @@ class ArticleController extends Controller
         return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $validated, $author) {
             $imagePath = null;
             if ($request->hasFile('featured_image')) {
-                $imagePath = $request->file('featured_image')->store('articles', 'public');
+                try {
+                    $imagePath = $request->file('featured_image')->store('articles', 'public');
+                    if (!$imagePath) {
+                        \Log::error('Failed to store image - store() returned false');
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Image upload exception: ' . $e->getMessage());
+                    // Continue without image rather than failing the entire article creation
+                    $imagePath = null;
+                }
             }
 
             $baseSlug = Str::slug($validated['title']);
