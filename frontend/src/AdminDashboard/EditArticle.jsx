@@ -71,12 +71,7 @@ export default function EditArticle() {
   };
 
   const handleUpdate = async () => {
-    console.log('Save button clicked');
-    console.log('Form data:', { title, author, category, tags, content });
-    console.log('Form valid:', isFormValid);
-    
     if (!validateForm()) {
-      console.log('Form validation failed');
       return;
     }
 

@@ -29,17 +29,14 @@ export default function ArticleCard({
 
   useEffect(() => {
     if (expanded && showRelated && category) {
-      console.log("Fetching related articles for:", category);
       const fetchRelated = async () => {
         try {
           const response = await axios.get("/api/articles", {
             params: { category: category.toLowerCase(), limit: 3 },
           });
-          console.log("Related articles response:", response.data);
           const filtered = response.data.data
             .filter((a) => a.slug !== slug)
             .slice(0, 3);
-          console.log("Filtered related articles:", filtered);
           setRelatedArticles(filtered);
         } catch (error) {
           console.error("Error fetching related articles:", error);
@@ -50,7 +47,6 @@ export default function ArticleCard({
   }, [expanded, showRelated, category, slug]);
 
   const handleClick = () => {
-    console.log("Card clicked:", { showRelated, expanded, category, slug });
     if (showRelated) {
       setExpanded(!expanded);
     } else if (onClick) {

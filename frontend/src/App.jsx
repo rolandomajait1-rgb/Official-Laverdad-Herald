@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import AccountPage from './UserProfile/AccountPage';
@@ -51,8 +52,9 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <ErrorBoundary>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
         <Route
           path="/"
           element={
@@ -560,6 +562,7 @@ function AnimatedRoutes() {
 
       </Routes>
     </AnimatePresence>
+    </ErrorBoundary>
   );
 }
 

@@ -44,12 +44,12 @@ class ArticleController extends Controller
         // Filter by category if provided
         if ($request->has('category') && $request->category) {
             $query->whereHas('categories', function ($q) use ($request) {
-                $q->where('name', 'LIKE', $request->category);
+                $q->where('name', 'ILIKE', $request->category);
             });
         }
 
-        // Filter by limit if provided
-        $limit = $request->get('limit', 10);
+        // Filter by limit if provided - max 100 to prevent DoS
+        $limit = min(max((int) $request->get('limit', 10), 1), 100);
         $articles = $query->paginate($limit);
 
         if (request()->wantsJson()) {
@@ -60,7 +60,9 @@ class ArticleController extends Controller
 
     public function publicIndex(Request $request)
     {
-        $limit = $request->get('limit', 10);
+        // Validate and limit pagination parameters
+        $limit = min(max((int) $request->get('limit', 10), 1), 100);
+        
         $articles = Article::published()
             ->with('author.user', 'categories', 'tags')
             ->withCount(['interactions as likes_count' => function ($query) {
@@ -347,8 +349,9 @@ class ArticleController extends Controller
 
     public function getLikedArticles(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $page = $request->get('page', 1);
+        // Validate pagination parameters
+        $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
+        $page = max((int) $request->get('page', 1), 1);
 
         $articles = Article::whereHas('interactions', function ($query) {
             $query->where('user_id', Auth::id())
@@ -362,8 +365,9 @@ class ArticleController extends Controller
 
     public function getSharedArticles(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $page = $request->get('page', 1);
+        // Validate pagination parameters
+        $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
+        $page = max((int) $request->get('page', 1), 1);
 
         $articles = Article::whereHas('interactions', function ($query) {
             $query->where('user_id', Auth::id())
@@ -393,8 +397,10 @@ class ArticleController extends Controller
 
         $query->latest('published_at');
 
-        $perPage = $request->get('per_page', 10);
-        $page = $request->get('page', 1);
+        // Validate pagination parameters
+        $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
+        $page = max((int) $request->get('page', 1), 1);
+        
         $articles = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Add article count to response
@@ -426,8 +432,10 @@ class ArticleController extends Controller
 
         $query->latest('published_at');
 
-        $perPage = $request->get('per_page', 10);
-        $page = $request->get('page', 1);
+        // Validate pagination parameters
+        $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
+        $page = max((int) $request->get('page', 1), 1);
+        
         $articles = $query->paginate($perPage, ['*'], 'page', $page);
 
         $articleCount = Article::where('author_id', $authorId)->count();
