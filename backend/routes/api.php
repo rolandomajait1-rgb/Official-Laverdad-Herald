@@ -47,7 +47,7 @@ Route::get('/categories/{category}/articles', function ($category) {
     $articles = Article::published()
         ->with('author.user', 'categories')
         ->whereHas('categories', function($q) use ($category) {
-            $q->where('name', 'LIKE', $category);
+            $q->where('name', 'ILIKE', $category);
         })
         ->latest('published_at')
         ->take(12)

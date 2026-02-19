@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ThumbsUp, Share2, Link as LinkIcon, Pencil, Trash2, Calendar } from 'lucide-react';
 import axios from '../utils/axiosConfig';
 import { isAdmin, isModerator } from '../utils/auth';
+import { sanitizeHtml } from '../utils/sanitize';
 
 const ArticleHeader = ({ article, navigate }) => (
   <div className="mb-8">
@@ -63,7 +64,7 @@ const ArticleBody = ({ article }) => (
         </p>
       )}
       
-      <div className="prose prose-lg" dangerouslySetInnerHTML={{ __html: article.content }} />
+      <div className="prose prose-lg" dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }} />
     </div>
   </article>
 );

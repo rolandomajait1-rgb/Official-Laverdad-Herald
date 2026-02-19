@@ -80,21 +80,15 @@ export default function AuthorProfile() {
   useEffect(() => {
     const fetchAuthorData = async () => {
       try {
-        console.log('Fetching data for author:', authorName);
         const response = await axios.get(`/api/authors/${encodeURIComponent(authorName)}`);
-        
-        console.log('Response status:', response.status);
         const data = response.data;
-        console.log('Response data:', data);
         
-        if (response.ok) {
-          setAuthor(data.author);
-          setArticles(data.articles);
-        } else {
-          console.error('API error:', data);
-        }
+        // Axios automatically throws for non-2xx responses
+        setAuthor(data.author);
+        setArticles(data.articles);
       } catch (error) {
         console.error('Error fetching author data:', error);
+        setError('Failed to load author profile');
       } finally {
         setLoading(false);
       }

@@ -23,6 +23,20 @@ export default function CreateArticle() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get('/api/categories');
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
 
 
@@ -113,7 +127,6 @@ export default function CreateArticle() {
         },
       });
 
-      console.log('Draft saved:', response.data);
       alert("Draft saved successfully!");
       navigate('/admin/draft-articles');
     } catch (error) {
@@ -285,13 +298,11 @@ export default function CreateArticle() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Category</option>
-                    <option value="1">News</option>
-                    <option value="2">Sports</option>
-                    <option value="3">Opinion</option>
-                    <option value="4">Literary</option>
-                    <option value="5">Features</option>
-                    <option value="6">Specials</option>
-                    <option value="7">Art</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>

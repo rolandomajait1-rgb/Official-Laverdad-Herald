@@ -32,6 +32,8 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchHomePageArticles = async () => {
       setLoading(true);
       setError(null);
@@ -44,23 +46,33 @@ export default function HomePage() {
 
         const responses = await Promise.all(promises);
 
-        setNewsArticles(responses[0].data || []);
-        setLiteraryArticles(responses[1].data || []);
-        setSpecialsArticles(responses[2].data || []);
-        setOpinionArticles(responses[3].data || []);
-        setArtArticles(responses[4].data || []);
-        setFeaturesArticles(responses[5].data || []);
-        setSportsArticles(responses[6].data || []);
+        if (isMounted) {
+          setNewsArticles(responses[0].data || []);
+          setLiteraryArticles(responses[1].data || []);
+          setSpecialsArticles(responses[2].data || []);
+          setOpinionArticles(responses[3].data || []);
+          setArtArticles(responses[4].data || []);
+          setFeaturesArticles(responses[5].data || []);
+          setSportsArticles(responses[6].data || []);
+        }
       } catch (err) {
-        console.error('Error fetching home page articles:', err);
-        console.error('Error details:', err.response?.data || err.message);
-        setError(`Failed to load articles: ${err.response?.status || err.message}`);
+        if (isMounted) {
+          console.error('Error fetching home page articles:', err);
+          console.error('Error details:', err.response?.data || err.message);
+          setError(`Failed to load articles: ${err.response?.status || err.message}`);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchHomePageArticles();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
