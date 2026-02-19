@@ -144,6 +144,7 @@ class ArticleController extends Controller
                 'slug' => $slug,
                 'content' => $validated['content'],
                 'author_id' => $author->id,
+                'author_name' => $validated['author_name'], // Store the custom author name
                 'status' => $status,
                 'published_at' => $status === 'published' ? now() : null,
                 'excerpt' => Str::limit($validated['content'], 150),
