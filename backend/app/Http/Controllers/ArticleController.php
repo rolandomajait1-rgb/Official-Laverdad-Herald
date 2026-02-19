@@ -97,16 +97,19 @@ class ArticleController extends Controller
             return response()->json(['error' => 'Admin access required'], 403);
         }
 
-        // Find user by name, then get their author profile
+        // Find or create author by name
         $authorUser = User::where('name', $validated['author_name'])->first();
+        
         if (!$authorUser) {
-            return response()->json(['error' => 'Author user not found'], 404);
+            // If user doesn't exist, use the logged-in admin as the author
+            $authorUser = $user;
         }
         
-        $author = Author::where('user_id', $authorUser->id)->first();
-        if (!$author) {
-            return response()->json(['error' => 'Author profile not found'], 404);
-        }
+        // Find or create author profile
+        $author = Author::firstOrCreate(
+            ['user_id' => $authorUser->id],
+            ['bio' => ''] // Default empty bio
+        );
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $validated, $author) {
             $imagePath = null;
