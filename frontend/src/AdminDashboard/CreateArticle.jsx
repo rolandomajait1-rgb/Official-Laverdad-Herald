@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiBarChart, FiPlus, FiFileText as FiFile, FiUsers, FiActivity } from 'react-icons/fi';
 import { X, Plus } from 'lucide-react';
+import { Editor } from '@tinymce/tinymce-react';
 import Header from "../components/Header";
 import Navigation from "../components/HeaderLink";
 import { AdminSidebar } from "../components/AdminSidebar";
@@ -10,6 +11,7 @@ import axios from '../utils/axiosConfig';
 
 export default function CreateArticle() {
   const navigate = useNavigate();
+  const editorRef = useRef(null);
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -89,10 +91,8 @@ export default function CreateArticle() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('category_id', category);
-      const formattedContent = content
-        ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
-        : '';
-      formData.append('content', formattedContent);
+      // TinyMCE already outputs HTML, no need to format
+      formData.append('content', content);
       
       // Send tags as array, not comma-separated string
       const tagArray = tags.map(tag => tag.replace('#', ''));
@@ -134,10 +134,8 @@ export default function CreateArticle() {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('category_id', category);
-      const formattedContent = content
-        ? content.split(/\n{2,}/).map(par => `<p>${par.replace(/\n/g, '<br/>')}</p>`).join('')
-        : '';
-      formData.append('content', formattedContent);
+      // TinyMCE already outputs HTML, no need to format
+      formData.append('content', content);
       
       // Send tags as array, not comma-separated string
       const tagArray = tags.map(tag => tag.replace('#', ''));
@@ -333,14 +331,26 @@ export default function CreateArticle() {
 
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Article Content</label>
-                <textarea
-                  id="content"
-                  placeholder="Type here..."
-                  rows={10}
+                <Editor
+                  apiKey="no-api-key"
+                  onInit={(evt, editor) => editorRef.current = editor}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical"
+                  onEditorChange={(newContent) => setContent(newContent)}
+                  init={{
+                    height: 500,
+                    menubar: true,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                      'removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    placeholder: 'Type your article content here...',
+                  }}
                 />
               </div>
 
