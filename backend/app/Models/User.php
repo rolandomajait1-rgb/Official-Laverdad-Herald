@@ -97,7 +97,16 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification()
     {
-        $verificationUrl = config('app.url') . '/api/email/verify/' . $this->id . '/' . sha1($this->getEmailForVerification());
+        $token = bin2hex(random_bytes(32));
+        \DB::table('verification_tokens')->insert([
+            'user_id' => $this->id,
+            'token' => $token,
+            'expires_at' => now()->addHours(24),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
         
         Mail::send('emails.verify-email', ['user' => $this, 'verificationUrl' => $verificationUrl], function ($message) {
             $message->to($this->email)->subject('Verify Your Email Address');

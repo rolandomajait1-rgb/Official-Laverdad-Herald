@@ -2,46 +2,55 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
+use App\Services\AuthService;
 use App\Models\User;
-use App\Models\Staff;
-use App\Models\Author;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
+    private AuthService $authService;
+    
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+    
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email|ends_with:@student.laverdad.edu.ph',
-            'password' => 'required',
-        ], [
-            'email.ends_with' => 'Use a laverdad email addresses to access this system.'
-        ]);
+        $user = User::where('email', $request->email)->first();
 
-        if (Auth::attempt($request->only('email', 'password'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ]);
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ]);
+        if (is_null($user->email_verified_at)) {
+            return back()->withErrors([
+                'email' => 'Please verify your email before logging in. Check your inbox for the verification link.',
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+        
+        return redirect()->intended('/dashboard');
     }
 
-    public function loginApi(Request $request)
+    public function loginApi(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
         $user = User::where('email', $request->email)->first();
         
         if (!$user) {
@@ -68,72 +77,38 @@ class AuthController extends Controller
         return response()->json(['token' => $token, 'role' => $user->role, 'user' => $user]);
     }
 
-
     public function showRegistrationForm()
     {
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|ends_with:@student.laverdad.edu.ph',
-            'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
-        ], [
-            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses are allowed to register.'
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'user',
-        ]);
-
-
-        Auth::login($user);
-
-        return redirect('/dashboard')->with('success', 'Registration successful. Welcome!');
+        try {
+            $this->authService->createUserWithVerification($request->validated());
+            
+            return redirect('/verification-pending')->with('success', 'Registration successful! Please check your email to verify your account.');
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'email' => 'Registration failed. Please try again.'
+            ]);
+        }
     }
 
-    public function registerApi(Request $request)
+    public function registerApi(RegisterRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users|ends_with:@student.laverdad.edu.ph',
-            'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
-        ], [
-            'email.ends_with' => 'Only @student.laverdad.edu.ph email addresses are allowed to register.',
-            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
-            'password.min' => 'Password must be at least 8 characters long.',
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'user',
-        ]);
-
-        $token = bin2hex(random_bytes(32));
-        \DB::table('verification_tokens')->insert([
-            'user_id' => $user->id,
-            'token' => $token,
-            'expires_at' => now()->addHours(24),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
-        \Mail::send('emails.verify-email', ['user' => $user, 'verificationUrl' => $verificationUrl], function ($message) use ($user) {
-            $message->to($user->email)->subject('Verify Your Email Address');
-        });
-
-        return response()->json([
-            'message' => 'Registration successful! Please check your email to verify your account before logging in.',
-            'user_id' => $user->id
-        ], 201);
+        try {
+            $user = $this->authService->createUserWithVerification($request->validated());
+            
+            return response()->json([
+                'message' => 'Registration successful! Please check your email to verify your account before logging in.',
+                'user_id' => $user->id
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed. Please try again.'
+            ], 500);
+        }
     }
 
     public function logout(Request $request)
@@ -153,23 +128,23 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out successfully']);
     }
 
-    public function changePasswordApi(Request $request)
+    public function changePasswordApi(ChangePasswordRequest $request)
     {
-        $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
-        ]);
-
-        $user = $request->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json(['message' => 'Current password is incorrect'], 400);
+        try {
+            $result = $this->authService->changePassword(
+                $request->user(),
+                $request->current_password,
+                $request->password
+            );
+            
+            if (!$result['success']) {
+                return response()->json(['message' => $result['message']], 400);
+            }
+            
+            return response()->json(['message' => $result['message']]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Password change failed'], 500);
         }
-
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        return response()->json(['message' => 'Password changed successfully']);
     }
 
     public function deleteAccountApi(Request $request)
@@ -178,81 +153,49 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = $request->user();
-
-        if (!Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Password is incorrect'], 400);
+        try {
+            $result = $this->authService->deleteAccount(
+                $request->user(),
+                $request->password
+            );
+            
+            if (!$result['success']) {
+                return response()->json(['message' => $result['message']], 400);
+            }
+            
+            return response()->json(['message' => $result['message']]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Account deletion failed'], 500);
         }
-
-        $user->tokens()->delete();
-        \App\Models\ArticleInteraction::where('user_id', $user->id)->delete();
-
-        $author = \App\Models\Author::where('user_id', $user->id)->first();
-        if ($author) {
-            \App\Models\Article::where('author_id', $author->id)->delete();
-        }
-
-        $user->delete();
-
-        return response()->json(['message' => 'Account deleted successfully']);
-    }
-
-    public function verifyEmail(Request $request)
-    {
-        $user = User::find($request->route('id'));
-
-        if (!$user) {
-            return redirect(config('app.frontend_url') . '/login?error=user_not_found');
-        }
-
-        if (! $request->hasValidSignature()) {
-            return redirect(config('app.frontend_url') . '/login?error=invalid_verification_link');
-        }
-
-        if (! hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
-            return redirect(config('app.frontend_url') . '/login?error=invalid_verification_link');
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
-        }
-
-        $user->markEmailAsVerified();
-        \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
-
-        return response()->json(['message' => 'Email verified successfully! You can now log in.'], 200);
     }
 
     public function verifyEmailToken(Request $request)
     {
         $token = $request->query('token');
         
-        if (!$token) {
-            return redirect(config('app.frontend_url') . '/login?error=invalid_token');
-        }
-
-        $verification = \DB::table('verification_tokens')
-            ->where('token', $token)
-            ->where('expires_at', '>', now())
-            ->first();
-
-        if (!$verification) {
-            return redirect(config('app.frontend_url') . '/login?error=invalid_or_expired_token');
-        }
-
-        $user = User::find($verification->user_id);
+        // Check for rate limiting by IP
+        $cacheKey = 'verify_attempts_' . $request->ip();
+        $attempts = Cache::get($cacheKey, 0);
         
-        if (!$user) {
-            return redirect(config('app.frontend_url') . '/login?error=user_not_found');
+        if ($attempts >= 10) {
+            return redirect(config('app.frontend_url') . '/login?error=too_many_attempts');
         }
 
-        if ($user->hasVerifiedEmail()) {
-            \DB::table('verification_tokens')->where('token', $token)->delete();
-            return redirect(config('app.frontend_url') . '/login?verified=1&message=already_verified');
+        $result = $this->authService->verifyUserEmail($token);
+        
+        if (!$result['success']) {
+            Cache::put($cacheKey, $attempts + 1, now()->addMinutes(15));
+            
+            $errorMessage = $result['message'];
+            if ($errorMessage === 'already_verified') {
+                return redirect(config('app.frontend_url') . '/login?verified=1&message=already_verified');
+            }
+            
+            return redirect(config('app.frontend_url') . '/login?error=' . $errorMessage);
         }
-
-        $user->markEmailAsVerified();
-        \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
+        
+        // Clear rate limit on successful verification
+        Cache::forget($cacheKey);
 
         return redirect(config('app.frontend_url') . '/login?verified=1');
     }
@@ -261,28 +204,10 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
         
-        $user = User::where('email', $request->email)->first();
-
-        if ($user && !$user->hasVerifiedEmail()) {
-            \DB::table('verification_tokens')->where('user_id', $user->id)->delete();
-            
-            $token = bin2hex(random_bytes(32));
-            \DB::table('verification_tokens')->insert([
-                'user_id' => $user->id,
-                'token' => $token,
-                'expires_at' => now()->addHours(24),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
-            \Mail::send('emails.verify-email', ['user' => $user, 'verificationUrl' => $verificationUrl], function ($message) use ($user) {
-                $message->to($user->email)->subject('Verify Your Email Address');
-            });
-        }
-
+        $result = $this->authService->resendVerification($request->email);
+        
         return response()->json([
-            'message' => 'If an unverified account exists for that email, a verification email has been sent.'
+            'message' => $result['message']
         ], 200);
     }
 
@@ -290,78 +215,30 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'If an account exists for that email, a password reset link has been sent.'
-            ], 200);
-        }
-
-        $token = \Illuminate\Support\Str::random(64);
-
-        \DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $user->email],
-            [
-                'email' => $user->email,
-                'token' => Hash::make($token),
-                'created_at' => now()
-            ]
-        );
-
-        $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($user->email);
-
-        try {
-            \Mail::send('emails.reset-password', ['user' => $user, 'resetUrl' => $resetUrl], function ($message) use ($user) {
-                $message->to($user->email)->subject('Reset Your Password');
-            });
-        } catch (\Exception $e) {
-            \Log::error('Password reset email failed: ' . $e->getMessage());
-        }
+        $result = $this->authService->initiatePasswordReset($request->email);
 
         return response()->json([
-            'message' => 'If an account exists for that email, a password reset link has been sent.'
+            'message' => $result['message']
         ], 200);
     }
 
-    public function resetPasswordApi(Request $request)
+    public function resetPasswordApi(ResetPasswordRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'token' => 'required|string',
-            'password' => 'required|string|min:8|confirmed|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/',
-        ]);
-
-        $resetRecord = \DB::table('password_reset_tokens')
-            ->where('email', $request->email)
-            ->first();
-
-        if (!$resetRecord) {
-            return response()->json(['message' => 'Invalid or expired reset token'], 400);
+        try {
+            $result = $this->authService->resetPassword(
+                $request->email,
+                $request->token,
+                $request->password
+            );
+            
+            if (!$result['success']) {
+                $statusCode = $result['message'] === 'User not found' ? 404 : 400;
+                return response()->json(['message' => $result['message']], $statusCode);
+            }
+            
+            return response()->json(['message' => $result['message']], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Password reset failed'], 500);
         }
-
-        if (!Hash::check($request->token, $resetRecord->token)) {
-            return response()->json(['message' => 'Invalid or expired reset token'], 400);
-        }
-
-        if (now()->diffInHours($resetRecord->created_at) > 24) {
-            \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-            return response()->json(['message' => 'Reset token has expired'], 400);
-        }
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-        $user->tokens()->delete();
-
-        return response()->json(['message' => 'Password reset successfully! You can now log in with your new password.'], 200);
     }
-
 }

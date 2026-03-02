@@ -10,3 +10,8 @@ Route::get('/', function () {
 Route::get('/sanctum/csrf-cookie', function () {
     return response()->json(['message' => 'CSRF cookie set']);
 });
+
+// Email Verification Pending Page
+Route::get('/verification-pending', function () {
+    return view('verification-pending');
+})->name('verification.pending');
