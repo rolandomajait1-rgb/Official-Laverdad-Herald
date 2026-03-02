@@ -56,10 +56,17 @@ class Article extends Model
     public function getFeaturedImageUrlAttribute()
     {
         if (isset($this->attributes['featured_image']) && $this->attributes['featured_image']) {
-            if (config('app.env') === 'local') {
-                return config('app.url') . '/storage/' . $this->attributes['featured_image'];
+            $path = $this->attributes['featured_image'];
+            
+            // Generate the storage URL
+            $url = config('app.url') . '/storage/' . $path;
+            
+            // Force HTTPS in production
+            if (config('app.env') !== 'local' && !str_starts_with($url, 'https://')) {
+                $url = str_replace('http://', 'https://', $url);
             }
-            return url('storage/' . $this->attributes['featured_image']);
+            
+            return $url;
         }
         return null;
     }

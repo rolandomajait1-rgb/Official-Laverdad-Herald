@@ -108,8 +108,8 @@ const ArticleCard = ({ featured_image, categories, published_at, title, excerpt,
       return;
     }
 
-    // No slug and no articleId — nothing to do
-    console.warn('ArticleCard: click ignored — no slug or onClick provided for this article', { articleId, title, slug });
+    // No slug and no articleId — silently ignore (article might be loading)
+    e.preventDefault();
   };
 
   const handleEditClick = (e) => {

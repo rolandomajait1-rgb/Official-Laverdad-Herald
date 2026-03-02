@@ -7,10 +7,23 @@ export const getApiUrl = (path) => {
   return `${API_BASE_URL}${cleanPath}`;
 };
 
-// Helper for storage URLs
+// Helper for storage URLs - ensures HTTPS in production
 export const getStorageUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http')) {
+    // Force HTTPS in production
+    if (window.location.protocol === 'https:' && path.startsWith('http://')) {
+      return path.replace('http://', 'https://');
+    }
+    return path;
+  }
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${cleanPath}`;
+  const url = `${API_BASE_URL}${cleanPath}`;
+  
+  // Force HTTPS in production
+  if (window.location.protocol === 'https:' && url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  
+  return url;
 };

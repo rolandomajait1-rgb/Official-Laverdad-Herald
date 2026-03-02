@@ -9,11 +9,21 @@ const authSlice = createSlice({
   },
   reducers: {
     setCredentials: (state, action) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.isAuthenticated = true;
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
-      localStorage.setItem('token', action.payload.token);
+      // Add safety check for payload
+      if (action.payload && typeof action.payload === 'object') {
+        state.user = action.payload.user || null;
+        state.token = action.payload.token || null;
+        state.isAuthenticated = !!action.payload.token;
+        
+        if (action.payload.user) {
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        }
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token);
+        }
+      } else {
+        console.warn('setCredentials called with invalid payload:', action.payload);
+      }
     },
     logout: (state) => {
       state.user = null;

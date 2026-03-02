@@ -9,14 +9,20 @@ const articlesSlice = createSlice({
   },
   reducers: {
     setArticles: (state, action) => {
-      state.articles = action.payload;
+      // Add safety check for payload
+      if (action.payload !== undefined && action.payload !== null) {
+        state.articles = Array.isArray(action.payload) ? action.payload : [];
+      } else {
+        console.warn('setArticles called with invalid payload:', action.payload);
+        state.articles = [];
+      }
       state.loading = false;
     },
     setLoading: (state, action) => {
-      state.loading = action.payload;
+      state.loading = action.payload !== undefined ? Boolean(action.payload) : false;
     },
     setError: (state, action) => {
-      state.error = action.payload;
+      state.error = action.payload || null;
       state.loading = false;
     },
   },
