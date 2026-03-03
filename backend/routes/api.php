@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DraftController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\SubscriberController;
@@ -14,6 +15,9 @@ use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\UserController;
 use App\Models\Article;
 use Illuminate\Support\Facades\Route;
+
+// Health Check Endpoint (for uptime monitoring)
+Route::get('/health', [HealthController::class, 'check']);
 
 // Team Members Routes
 Route::get('/team-members', [TeamMemberController::class, 'index']);
