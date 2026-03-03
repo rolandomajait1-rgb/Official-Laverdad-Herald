@@ -19,32 +19,35 @@ class CloudinaryService
     public function uploadImage(UploadedFile $file): string
     {
         try {
-            // Upload to Cloudinary with 'articles' folder and optimization settings
-            $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
+            $result = Cloudinary::upload($file->getRealPath(), [
                 'folder' => 'articles',
                 'quality' => 'auto:good',
                 'fetch_format' => 'auto',
                 'width' => 1200,
                 'height' => 800,
                 'crop' => 'limit'
-            ])->getSecurePath();
+            ]);
+            
+            $uploadedFileUrl = $result->getSecurePath();
             
             if (!$uploadedFileUrl) {
+                Log::error('Cloudinary returned empty URL', ['result' => $result]);
                 throw new Exception('Cloudinary upload failed: No secure URL returned');
             }
             
-            Log::info('Image uploaded to Cloudinary successfully', [
-                'original_name' => $file->getClientOriginalName(),
-                'cloudinary_url' => $uploadedFileUrl
+            Log::info('Image uploaded to Cloudinary', [
+                'file' => $file->getClientOriginalName(),
+                'url' => $uploadedFileUrl
             ]);
             
             return $uploadedFileUrl;
         } catch (Exception $e) {
             Log::error('Cloudinary upload failed', [
-                'original_name' => $file->getClientOriginalName(),
-                'error' => $e->getMessage()
+                'file' => $file->getClientOriginalName(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-            throw new Exception('Failed to upload image to Cloudinary: ' . $e->getMessage());
+            throw $e;
         }
     }
     

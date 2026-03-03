@@ -23,7 +23,7 @@ Route::get('/team-members', [TeamMemberController::class, 'index']);
 Route::middleware('auth:sanctum')->post('/team-members/update', [TeamMemberController::class, 'update']);
 
 // Public API Routes with Rate Limiting
-Route::middleware('throttle:5,1')->group(function () {
+Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login', [AuthController::class, 'loginApi']);
     Route::post('/register', [AuthController::class, 'registerApi']);
     Route::post('/reset-password', [AuthController::class, 'resetPasswordApi']);
@@ -65,22 +65,25 @@ Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
 Route::get('/articles/search', function (Request $request) {
     $query = $request->get('q', '');
     
-    // Sanitize search query to prevent wildcard abuse
-    $query = str_replace(['%', '_'], ['\%', '\_'], $query);
+    $query = trim($query);
+    $query = str_replace(['%', '_'], ['\\%', '\\_'], $query);
     
-    if (strlen(trim($query)) < 3) {
+    if (strlen($query) < 3) {
         return response()->json(['data' => []]);
+    }
+    
+    if (strlen($query) > 100) {
+        return response()->json(['error' => 'Search query too long'], 400);
     }
     
     $articles = Article::published()
         ->with('author.user', 'categories')
         ->where(function($q) use ($query) {
-            $q->where('title', 'LIKE', "%{$query}%")
-              ->orWhere('content', 'LIKE', "%{$query}%")
-              ->orWhere('excerpt', 'LIKE', "%{$query}%");
+            $q->where('title', 'ILIKE', "%{$query}%")
+              ->orWhere('excerpt', 'ILIKE', "%{$query}%");
         })
         ->latest('published_at')
-        ->take(20)
+        ->limit(20)
         ->get();
         
     return response()->json(['data' => $articles]);

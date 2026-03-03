@@ -6,8 +6,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -15,16 +13,9 @@ class User extends Authenticatable implements MustVerifyEmail
     public const ROLE_USER = 'user';
     public const ROLE_ADMIN = 'admin';
     public const ROLE_MODERATOR = 'moderator';
-  
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -33,21 +24,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -56,60 +37,23 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    /**
-     * Check if the user has a specific role.
-     *
-     * @param string $role
-     * @return bool
-     */
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
     }
 
-    /**
-     * Check if the user is a moderator.
-     *
-     * @return bool
-     */
     public function isModerator(): bool
     {
         return $this->role === self::ROLE_MODERATOR;
     }
 
-    /**
-     * Check if the user is an admin.
-     *
-     * @return bool
-     */
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
     }
 
-    /**
-     * Get the author associated with the user.
-     */
     public function author()
     {
         return $this->hasOne(Author::class);
-    }
-
-    public function sendEmailVerificationNotification()
-    {
-        $token = bin2hex(random_bytes(32));
-        \DB::table('verification_tokens')->insert([
-            'user_id' => $this->id,
-            'token' => $token,
-            'expires_at' => now()->addHours(24),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $verificationUrl = config('app.url') . '/api/email/verify-token?token=' . $token;
-        
-        Mail::send('emails.verify-email', ['user' => $this, 'verificationUrl' => $verificationUrl], function ($message) {
-            $message->to($this->email)->subject('Verify Your Email Address');
-        });
     }
 }

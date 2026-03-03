@@ -126,12 +126,9 @@ class ArticleController extends Controller
             if ($request->hasFile('featured_image')) {
                 try {
                     $imagePath = $this->cloudinaryService->uploadImage($request->file('featured_image'));
-                    if (!$imagePath) {
-                        \Log::error('Failed to upload image to Cloudinary - uploadImage() returned empty');
-                    }
+                    Log::info('Article image uploaded', ['path' => $imagePath]);
                 } catch (\Exception $e) {
-                    \Log::error('Cloudinary upload exception: ' . $e->getMessage());
-                    // Continue without image rather than failing the entire article creation
+                    Log::error('Image upload failed', ['error' => $e->getMessage()]);
                     $imagePath = null;
                 }
             }

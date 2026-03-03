@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Mail\VerificationEmail;
+use App\Mail\PasswordResetEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -21,15 +23,9 @@ class MailService
         try {
             $verificationUrl = $this->buildVerificationUrl($token);
             
-            Mail::send('emails.verify-email', [
-                'user' => $user,
-                'verificationUrl' => $verificationUrl
-            ], function ($message) use ($user) {
-                $message->to($user->email)
-                    ->subject('Verify Your Email Address');
-            });
+            Mail::to($user->email)->queue(new VerificationEmail($user, $verificationUrl));
             
-            Log::info('Verification email sent', [
+            Log::info('Verification email queued', [
                 'user_email' => $user->email,
                 'operation' => 'email_verification'
             ]);
@@ -56,15 +52,9 @@ class MailService
         try {
             $resetUrl = $this->buildPasswordResetUrl($token, $user->email);
             
-            Mail::send('emails.reset-password', [
-                'user' => $user,
-                'resetUrl' => $resetUrl
-            ], function ($message) use ($user) {
-                $message->to($user->email)
-                    ->subject('Reset Your Password');
-            });
+            Mail::to($user->email)->queue(new PasswordResetEmail($user, $resetUrl));
             
-            Log::info('Password reset email sent', [
+            Log::info('Password reset email queued', [
                 'user_email' => $user->email,
                 'operation' => 'password_reset'
             ]);
