@@ -12,6 +12,20 @@ class SubscriberController extends Controller
     public function index()
     {
         $subscribers = Subscriber::paginate(10);
+        
+        // Return JSON for API requests
+        if (request()->wantsJson() || request()->is('api/*')) {
+            return response()->json([
+                'data' => $subscribers->items(),
+                'meta' => [
+                    'current_page' => $subscribers->currentPage(),
+                    'per_page' => $subscribers->perPage(),
+                    'total' => $subscribers->total(),
+                    'last_page' => $subscribers->lastPage(),
+                ]
+            ]);
+        }
+        
         return view('subscribers.index', compact('subscribers'));
     }
 

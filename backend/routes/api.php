@@ -45,8 +45,8 @@ Route::middleware('throttle:10,1')->post('/contact/subscribe', [ContactControlle
 // Public unsubscribe endpoint
 Route::get('/unsubscribe', [SubscriberController::class, 'unsubscribe']);
 
-// Public Categories
-Route::get('/categories', [CategoryController::class, 'index']);
+// Public Categories with caching
+Route::get('/categories', [CategoryController::class, 'index'])->middleware('cache.headers:public;max_age=600');
 Route::get('/categories/{category}/articles', function ($category) {
     $articles = Article::published()
         ->with('author.user', 'categories')
@@ -60,34 +60,52 @@ Route::get('/categories/{category}/articles', function ($category) {
     return response()->json(['data' => $articles]);
 });
 
-// Public Articles
-Route::get('/articles/public', [ArticleController::class, 'publicIndex']);
+// Public Articles with caching
+Route::get('/articles/public', [ArticleController::class, 'publicIndex'])->middleware('cache.headers:public;max_age=300');
 Route::get('/articles/search', function (Request $request) {
     $query = $request->get('q', '');
+    $page = max(1, (int) $request->get('page', 1));
+    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
     
     $query = trim($query);
     $query = str_replace('\\', '\\\\', $query);
     $query = str_replace(['%', '_'], ['\\%', '\\_'], $query);
     
     if (strlen($query) < 3) {
-        return response()->json(['data' => []]);
+        return response()->json([
+            'data' => [],
+            'meta' => [
+                'current_page' => 1,
+                'per_page' => $perPage,
+                'total' => 0,
+                'last_page' => 1
+            ]
+        ]);
     }
     
     if (strlen($query) > 100) {
-        return response()->json(['error' => 'Search query too long'], 400);
+        return response()->json(['message' => 'Search query too long'], 400);
     }
     
     $articles = Article::published()
         ->with('author.user', 'categories')
         ->where(function($q) use ($query) {
             $q->where('title', 'ILIKE', "%{$query}%")
-              ->orWhere('excerpt', 'ILIKE', "%{$query}%");
+              ->orWhere('excerpt', 'ILIKE', "%{$query}%")
+              ->orWhere('content', 'ILIKE', "%{$query}%");
         })
         ->latest('published_at')
-        ->limit(20)
-        ->get();
+        ->paginate($perPage, ['*'], 'page', $page);
         
-    return response()->json(['data' => $articles]);
+    return response()->json([
+        'data' => $articles->items(),
+        'meta' => [
+            'current_page' => $articles->currentPage(),
+            'per_page' => $articles->perPage(),
+            'total' => $articles->total(),
+            'last_page' => $articles->lastPage()
+        ]
+    ]);
 });
 
 Route::get('/articles/by-slug/{slug}', function ($slug) {
@@ -102,7 +120,7 @@ Route::get('/articles/by-slug/{slug}', function ($slug) {
 Route::get('/articles/id/{id}', function ($id) {
     $article = Article::with('author.user', 'categories', 'tags')->find($id);
     if (!$article) {
-        return response()->json(['error' => 'Article not found'], 404);
+        return response()->json(['message' => 'Article not found'], 404);
     }
 
     return response()->json($article);
@@ -111,18 +129,26 @@ Route::get('/articles/id/{id}', function ($id) {
 Route::get('/articles/author-public/{authorId}', [ArticleController::class, 'getArticlesByAuthorPublic']);
 
 Route::get('/latest-articles', function () {
-    $articles = Article::published()
-        ->with('author.user', 'categories')
-        ->latest('published_at')
-        ->take(6)
-        ->get();
+    $articles = \Illuminate\Support\Facades\Cache::remember('latest_articles', 300, function () {
+        return Article::published()
+            ->with('author.user', 'categories')
+            ->latest('published_at')
+            ->take(6)
+            ->get();
+    });
         
     return response()->json($articles);
 });
 
-// Public Authors
-Route::get('/authors', function () {
-    $authors = \App\Models\Author::with('user:id,name,email')->get()->map(function($author) {
+// Public Authors with pagination
+Route::get('/authors', function (Request $request) {
+    $page = max(1, (int) $request->get('page', 1));
+    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
+    
+    $authors = \App\Models\Author::with('user:id,name,email')
+        ->paginate($perPage, ['*'], 'page', $page);
+    
+    $formattedAuthors = $authors->map(function($author) {
         return [
             'id' => $author->id,
             'name' => $author->name,
@@ -131,10 +157,19 @@ Route::get('/authors', function () {
             'website' => $author->website,
         ];
     });
-    return response()->json($authors);
+    
+    return response()->json([
+        'data' => $formattedAuthors,
+        'meta' => [
+            'current_page' => $authors->currentPage(),
+            'per_page' => $authors->perPage(),
+            'total' => $authors->total(),
+            'last_page' => $authors->lastPage()
+        ]
+    ]);
 });
 
-Route::get('/authors/{authorName}', function ($authorName) {
+Route::get('/authors/{authorName}', function (Request $request, $authorName) {
     Log::info('Looking for author/user: ' . $authorName);
 
     $user = \App\Models\User::where('name', $authorName)
@@ -142,18 +177,21 @@ Route::get('/authors/{authorName}', function ($authorName) {
         ->first();
 
     if (!$user) {
-        return response()->json(['error' => 'Author not found'], 404);
+        return response()->json(['message' => 'Author not found'], 404);
     }
 
     $author = \App\Models\Author::where('user_id', $user->id)->first();
     if (!$author) {
-        return response()->json(['error' => 'Author profile not found'], 404);
+        return response()->json(['message' => 'Author profile not found'], 404);
     }
+
+    $page = max(1, (int) $request->get('page', 1));
+    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
 
     $articles = Article::with('author.user', 'categories')
         ->where('author_id', $author->id)
         ->latest('created_at')
-        ->get();
+        ->paginate($perPage, ['*'], 'page', $page);
 
     $formattedArticles = $articles->map(function ($article) {
         return [
@@ -173,15 +211,21 @@ Route::get('/authors/{authorName}', function ($authorName) {
     return response()->json([
         'author' => [
             'name' => $user->name,
-            'articleCount' => $formattedArticles->count()
+            'articleCount' => $articles->total()
         ],
-        'articles' => $formattedArticles
+        'articles' => $formattedArticles,
+        'meta' => [
+            'current_page' => $articles->currentPage(),
+            'per_page' => $articles->perPage(),
+            'total' => $articles->total(),
+            'last_page' => $articles->lastPage()
+        ]
     ]);
 });
 
-// Public Tags
-Route::get('/tags', [TagController::class, 'index']);
-Route::get('/tags/{tag}', [TagController::class, 'show']);
+// Public Tags with caching
+Route::get('/tags', [TagController::class, 'index'])->middleware('cache.headers:public;max_age=600');
+Route::get('/tags/{tag}', [TagController::class, 'show'])->middleware('cache.headers:public;max_age=300');
 
 // Protected Logs (moved to auth)
 Route::middleware('auth:sanctum')->group(function () {
