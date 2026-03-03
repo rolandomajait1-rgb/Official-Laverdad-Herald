@@ -20,7 +20,7 @@ class MailService
         try {
             $verificationUrl = $this->buildVerificationUrl($token);
 
-            Mail::to($user->email)->queue(new VerificationEmail($user, $verificationUrl));
+            Mail::to($user->email)->send(new VerificationEmail($user, $verificationUrl));
 
             Log::info('Verification email queued', [
                 'user_email' => $user->email,
@@ -46,7 +46,7 @@ class MailService
         try {
             $resetUrl = $this->buildPasswordResetUrl($token, $user->email);
 
-            Mail::to($user->email)->queue(new PasswordResetEmail($user, $resetUrl));
+            Mail::to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
 
             Log::info('Password reset email queued', [
                 'user_email' => $user->email,
