@@ -29,7 +29,7 @@ class Article extends Model
         'published_at' => 'datetime',
     ];
 
-    protected $appends = ['featured_image_url'];
+    protected $appends = ['featured_image_url', 'is_liked', 'likes_count'];
     
     public function getLikesCountAttribute()
     {

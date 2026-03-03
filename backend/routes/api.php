@@ -66,6 +66,7 @@ Route::get('/articles/search', function (Request $request) {
     $query = $request->get('q', '');
     
     $query = trim($query);
+    $query = str_replace('\\', '\\\\', $query);
     $query = str_replace(['%', '_'], ['\\%', '\\_'], $query);
     
     if (strlen($query) < 3) {

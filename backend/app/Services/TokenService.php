@@ -67,19 +67,20 @@ class TokenService
     public function createPasswordResetToken(string $email): array
     {
         $token = \Illuminate\Support\Str::random(64);
+        $hashedToken = hash_hmac('sha256', $token, config('app.key'));
         
         PasswordResetToken::updateOrCreate(
             ['email' => $email],
             [
                 'email' => $email,
-                'token' => $token,
+                'token' => $hashedToken,
                 'created_at' => now()
             ]
         );
         
         return [
             'token' => $token,
-            'hashedToken' => $token
+            'hashedToken' => $hashedToken
         ];
     }
     
@@ -92,9 +93,7 @@ class TokenService
      */
     public function validatePasswordResetToken(string $email, string $token): ?PasswordResetToken
     {
-        $resetRecord = PasswordResetToken::where('email', $email)
-            ->where('token', $token)
-            ->first();
+        $resetRecord = PasswordResetToken::where('email', $email)->first();
         
         if (!$resetRecord) {
             return null;
@@ -102,6 +101,11 @@ class TokenService
         
         if ($resetRecord->isExpired()) {
             $this->deletePasswordResetToken($email);
+            return null;
+        }
+        
+        $hashedToken = hash_hmac('sha256', $token, config('app.key'));
+        if (!hash_equals($resetRecord->token, $hashedToken)) {
             return null;
         }
         

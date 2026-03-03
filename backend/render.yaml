@@ -36,6 +36,8 @@ services:
           property: password
       - key: DB_SSLMODE
         value: require
+      - key: QUEUE_CONNECTION
+        value: database
 
   - type: worker
     name: laverdad-herald-queue-worker
@@ -74,6 +76,8 @@ services:
           property: password
       - key: DB_SSLMODE
         value: require
+      - key: QUEUE_CONNECTION
+        value: database
 
 databases:
   - name: laverdad-herald-db
