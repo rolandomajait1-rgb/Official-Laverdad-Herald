@@ -67,7 +67,7 @@ class MailService
      */
     private function buildVerificationUrl(string $token): string
     {
-        return config('app.url').'/api/email/verify-token?token='.$token;
+        return config('app.frontend_url').'/verify-email?token='.$token;
     }
 
     /**
