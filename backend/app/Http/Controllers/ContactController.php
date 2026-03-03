@@ -91,18 +91,19 @@ class ContactController extends Controller
     public function subscribe(Request $request)
     {
         $request->validate([
-            'email' => 'required|email'
+            'email' => 'required|email',
+            'name' => 'nullable|string|max:255'
         ]);
 
-        Mail::raw(
-            "New Newsletter Subscription\n\nEmail: {$request->email}",
-            function ($message) {
-                $message->to(env('MAIL_TO_ADDRESS', 'admin@laverdadherald.com'))
-                    ->subject('Newsletter Subscription - La Verdad Herald');
-            }
+        $subscriberService = app(\App\Services\SubscriberService::class);
+        $result = $subscriberService->subscribe(
+            $request->email,
+            $request->name
         );
 
-        return response()->json(['message' => 'Subscription successful'])
+        return response()->json([
+            'message' => $result['message']
+        ], $result['success'] ? 200 : 400)
             ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
             ->header('Access-Control-Allow-Methods', 'POST, OPTIONS')
             ->header('Access-Control-Allow-Headers', 'Content-Type');

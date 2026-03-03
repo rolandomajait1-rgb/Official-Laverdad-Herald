@@ -10,7 +10,7 @@ use Exception;
 class CloudinaryService
 {
     /**
-     * Upload an image to Cloudinary
+     * Upload an image to Cloudinary with optimization
      * 
      * @param UploadedFile $file
      * @return string The secure HTTPS URL of the uploaded image
@@ -19,9 +19,14 @@ class CloudinaryService
     public function uploadImage(UploadedFile $file): string
     {
         try {
-            // Upload to Cloudinary with 'articles' folder
+            // Upload to Cloudinary with 'articles' folder and optimization settings
             $uploadedFileUrl = Cloudinary::upload($file->getRealPath(), [
-                'folder' => 'articles'
+                'folder' => 'articles',
+                'quality' => 'auto:good',
+                'fetch_format' => 'auto',
+                'width' => 1200,
+                'height' => 800,
+                'crop' => 'limit'
             ])->getSecurePath();
             
             if (!$uploadedFileUrl) {
@@ -41,5 +46,34 @@ class CloudinaryService
             ]);
             throw new Exception('Failed to upload image to Cloudinary: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Get optimized image URL with transformations
+     * 
+     * @param string $imageUrl Original Cloudinary URL
+     * @param int $width Desired width
+     * @param int $height Desired height
+     * @param string $crop Crop mode (fill, fit, limit, etc.)
+     * @return string Transformed image URL
+     */
+    public function getOptimizedUrl(string $imageUrl, int $width = 800, int $height = 600, string $crop = 'fill'): string
+    {
+        // If not a Cloudinary URL, return as-is
+        if (!str_contains($imageUrl, 'res.cloudinary.com')) {
+            return $imageUrl;
+        }
+        
+        // Extract the public ID from the URL
+        $parts = explode('/upload/', $imageUrl);
+        if (count($parts) !== 2) {
+            return $imageUrl;
+        }
+        
+        // Build transformation string
+        $transformation = "w_{$width},h_{$height},c_{$crop},q_auto:good,f_auto";
+        
+        // Reconstruct URL with transformations
+        return $parts[0] . '/upload/' . $transformation . '/' . $parts[1];
     }
 }

@@ -26,9 +26,11 @@ Route::middleware('auth:sanctum')->post('/team-members/update', [TeamMemberContr
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/login', [AuthController::class, 'loginApi']);
     Route::post('/register', [AuthController::class, 'registerApi']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPasswordApi']);
     Route::post('/reset-password', [AuthController::class, 'resetPasswordApi']);
 });
+
+// Stricter rate limiting for password reset requests
+Route::middleware('throttle:3,1')->post('/forgot-password', [AuthController::class, 'forgotPasswordApi']);
 
 // Email Verification Routes
 Route::middleware('throttle:10,1')->get('/email/verify-token', [AuthController::class, 'verifyEmailToken'])->name('verification.verify.token');
@@ -39,6 +41,9 @@ Route::middleware('throttle:10,1')->post('/contact/feedback', [ContactController
 Route::middleware('throttle:5,1')->post('/contact/request-coverage', [ContactController::class, 'requestCoverage']);
 Route::middleware('throttle:5,1')->post('/contact/join-herald', [ContactController::class, 'joinHerald']);
 Route::middleware('throttle:10,1')->post('/contact/subscribe', [ContactController::class, 'subscribe']);
+
+// Public unsubscribe endpoint
+Route::get('/unsubscribe', [SubscriberController::class, 'unsubscribe']);
 
 // Public Categories
 Route::get('/categories', [CategoryController::class, 'index']);
@@ -214,6 +219,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Subscribers API
     Route::apiResource('subscribers', SubscriberController::class);
+    Route::post('/subscribers/send-newsletter', [SubscriberController::class, 'sendNewsletter']);
 
     // Admin & Moderator Shared Routes
     Route::middleware(['role:admin,moderator'])->group(function () {

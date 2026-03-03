@@ -35,6 +35,7 @@ import AuthorProfile from './pages/AuthorProfile';
 import TagSearchResults from './pages/TagSearchResults';
 import VerifyEmail from './pages/VerifyEmail';
 import EmailVerified from './pages/EmailVerified';
+import UnsubscribePage from './pages/UnsubscribePage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Preloader from './components/Preloader';
@@ -540,6 +541,20 @@ function AnimatedRoutes() {
               transition={pageTransition}
             >
               <VerifyEmail />
+            </motion.div>
+          }
+        />
+        <Route
+          path="/unsubscribe"
+          element={
+            <motion.div
+              initial="initial"
+              animate="in"
+              exit="out"
+              variants={pageVariants}
+              transition={pageTransition}
+            >
+              <UnsubscribePage />
             </motion.div>
           }
         />
