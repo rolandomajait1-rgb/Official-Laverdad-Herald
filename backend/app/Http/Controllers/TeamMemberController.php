@@ -17,7 +17,7 @@ class TeamMemberController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'role' => 'required|string|max:255',
-            'image' => 'nullable|string'
+            'image' => 'nullable|string',
         ]);
 
         $member = TeamMember::updateOrCreate(
@@ -25,7 +25,7 @@ class TeamMemberController extends Controller
             [
                 'name' => $request->name,
                 'role' => $request->role,
-                'image' => $request->image
+                'image' => $request->image,
             ]
         );
 

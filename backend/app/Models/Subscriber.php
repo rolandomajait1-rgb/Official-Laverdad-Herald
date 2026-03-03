@@ -29,7 +29,7 @@ class Subscriber extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($subscriber) {
             if (empty($subscriber->unsubscribe_token)) {
                 $subscriber->unsubscribe_token = Str::random(64);
@@ -47,17 +47,17 @@ class Subscriber extends Model
     {
         return $query->where('status', 'active');
     }
-    
+
     public function scopeUnsubscribed($query)
     {
         return $query->where('status', 'unsubscribed');
     }
-    
+
     public function isActive(): bool
     {
         return $this->status === 'active';
     }
-    
+
     public function unsubscribe(): void
     {
         $this->update([

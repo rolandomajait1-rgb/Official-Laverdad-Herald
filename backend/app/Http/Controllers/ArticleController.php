@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\Category;
-use App\Models\Tag;
 use App\Models\ArticleInteraction;
 use App\Models\Author;
+use App\Models\Category;
+use App\Models\Tag;
 use App\Models\User;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
@@ -32,13 +32,13 @@ class ArticleController extends Controller
             ->withExists(['interactions as is_liked' => function ($query) {
                 $query->where('user_id', Auth::id())->where('type', 'liked');
             }]);
-        
+
         // Filter by status if provided
         if ($request->has('status') && $request->status) {
             // Require authentication for draft articles
             if ($request->status === 'draft') {
                 $user = Auth::user();
-                if (!$user || !$user->isAdmin()) {
+                if (! $user || ! $user->isAdmin()) {
                     return response()->json(['error' => 'Admin access required for drafts'], 403);
                 }
             }
@@ -46,7 +46,7 @@ class ArticleController extends Controller
         } else {
             $query->published();
         }
-        
+
         $query->latest($request->status === 'draft' ? 'created_at' : 'published_at');
 
         // Filter by category if provided
@@ -63,6 +63,7 @@ class ArticleController extends Controller
         if (request()->wantsJson()) {
             return response()->json($articles);
         }
+
         return view('articles.index', compact('articles'));
     }
 
@@ -70,7 +71,7 @@ class ArticleController extends Controller
     {
         // Validate and limit pagination parameters
         $limit = min(max((int) $request->get('limit', 10), 1), 100);
-        
+
         $articles = Article::published()
             ->with('author.user', 'categories', 'tags')
             ->withCount(['interactions as likes_count' => function ($query) {
@@ -78,7 +79,89 @@ class ArticleController extends Controller
             }])
             ->latest('published_at')
             ->paginate($limit);
-        
+
+        return response()->json($articles);
+    }
+
+    public function publicSearch(Request $request)
+    {
+        $query = $request->get('q', '');
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
+
+        $query = trim($query);
+        $query = str_replace('\\', '\\\\', $query);
+        $query = str_replace(['%', '_'], ['\\%', '\\_'], $query);
+
+        if (strlen($query) < 3) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'current_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'last_page' => 1,
+                ],
+            ]);
+        }
+
+        if (strlen($query) > 100) {
+            return response()->json(['message' => 'Search query too long'], 400);
+        }
+
+        $articles = Article::published()
+            ->with('author.user', 'categories')
+            ->where(function ($q) use ($query) {
+                $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+                $like = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
+                $q->where('title', $like, "%{$query}%")
+                    ->orWhere('excerpt', $like, "%{$query}%")
+                    ->orWhere('content', $like, "%{$query}%");
+            })
+            ->latest('published_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data' => $articles->items(),
+            'meta' => [
+                'current_page' => $articles->currentPage(),
+                'per_page' => $articles->perPage(),
+                'total' => $articles->total(),
+                'last_page' => $articles->lastPage(),
+            ],
+        ]);
+    }
+
+    public function publicBySlug($slug)
+    {
+        $article = Article::published()
+            ->with('author.user', 'categories', 'tags')
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return response()->json($article);
+    }
+
+    public function publicById($id)
+    {
+        $article = Article::with('author.user', 'categories', 'tags')->find($id);
+        if (! $article) {
+            return response()->json(['message' => 'Article not found'], 404);
+        }
+
+        return response()->json($article);
+    }
+
+    public function latestArticles()
+    {
+        $articles = \Illuminate\Support\Facades\Cache::remember('latest_articles', 300, function () {
+            return Article::published()
+                ->with('author.user', 'categories')
+                ->latest('published_at')
+                ->take(6)
+                ->get();
+        });
+
         return response()->json($articles);
     }
 
@@ -86,6 +169,7 @@ class ArticleController extends Controller
     {
         $categories = Category::all();
         $tags = Tag::all();
+
         return view('articles.create', compact('categories', 'tags'));
     }
 
@@ -103,18 +187,17 @@ class ArticleController extends Controller
 
         // Admin creates articles and assigns to authors
         $user = Auth::user();
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             return response()->json(['error' => 'Admin access required'], 403);
         }
 
         // Find or create author by name
         $authorUser = User::where('name', $validated['author_name'])->first();
-        
-        if (!$authorUser) {
-            // If user doesn't exist, use the logged-in admin as the author
-            $authorUser = $user;
+
+        if (! $authorUser) {
+            return response()->json(['error' => 'Author user not found'], 404);
         }
-        
+
         // Find or create author profile
         $author = Author::firstOrCreate(
             ['user_id' => $authorUser->id],
@@ -129,26 +212,19 @@ class ArticleController extends Controller
                     Log::info('Article image uploaded', ['path' => $imagePath]);
                 } catch (\Exception $e) {
                     Log::error('Image upload failed', ['error' => $e->getMessage()]);
-                    $imagePath = null;
+
+                    // Bubble up the exception to return a specific 422 error to the user
+                    return response()->json(['error' => 'Featured image failed to upload to Cloudinary. Please try again.'], 422);
                 }
             }
 
-            $baseSlug = Str::slug($validated['title']);
-            $slug = $baseSlug;
-            $counter = 1;
-
-            // Simple loop for now, but inside transaction with lockForUpdate on a check would be better, 
-            // relying on unique index constraint exception is the mostly robust way. 
-            // For now, we keep the loop but ensures atomicity of the whole operation.
-            while (Article::where('slug', $slug)->exists()) {
-                $slug = $baseSlug . '-' . $counter;
-                $counter++;
-            }
+            // Slug generation is handled automatically by the Article Model's boot method
+            // This prevents duplicate code and avoids race conditions without explicit locking.
 
             $status = $request->get('status', 'published');
             $article = Article::create([
                 'title' => $validated['title'],
-                'slug' => $slug,
+                // 'slug' is generated by Model boot method
                 'content' => $validated['content'],
                 'author_id' => $author->id,
                 'author_name' => $validated['author_name'], // Store the custom author name
@@ -160,7 +236,7 @@ class ArticleController extends Controller
 
             $article->categories()->attach($validated['category_id']);
 
-            if (!empty($validated['tags'])) {
+            if (! empty($validated['tags'])) {
                 $tagIds = [];
                 foreach ($validated['tags'] as $tagName) {
                     $tag = Tag::firstOrCreate(['name' => trim($tagName)]);
@@ -182,16 +258,19 @@ class ArticleController extends Controller
                     $query->where('type', 'liked');
                 }]);
                 if (Auth::check()) {
-                   $article->loadExists(['interactions as is_liked' => function ($query) {
+                    $article->loadExists(['interactions as is_liked' => function ($query) {
                         $query->where('user_id', Auth::id())->where('type', 'liked');
-                    }]); 
+                    }]);
                 }
+
                 return response()->json($article);
             }
+
             return view('articles.show', compact('article'));
         } catch (\Exception $e) {
-            Log::error('Error in ArticleController@show: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load article: ' . $e->getMessage()], 500);
+            Log::error('Error in ArticleController@show: '.$e->getMessage());
+
+            return response()->json(['error' => 'Failed to load article: '.$e->getMessage()], 500);
         }
     }
 
@@ -208,7 +287,7 @@ class ArticleController extends Controller
 
         $related = \App\Models\Article::published()
             ->where('id', '!=', $article->id)
-            ->whereHas('categories', function($q) use ($article){
+            ->whereHas('categories', function ($q) use ($article) {
                 $q->whereIn('categories.id', $article->categories->pluck('id'));
             })
             ->with('author.user')
@@ -223,6 +302,7 @@ class ArticleController extends Controller
     {
         $categories = Category::all();
         $tags = Tag::all();
+
         return view('articles.edit', compact('article', 'categories', 'tags'));
     }
 
@@ -244,31 +324,28 @@ class ArticleController extends Controller
 
         // Find user by name, then get their author profile
         $authorUser = User::where('name', $request->author)->first();
-        if (!$authorUser) {
+        if (! $authorUser) {
             return response()->json(['error' => 'Author user not found'], 404);
         }
-        
+
         $author = Author::where('user_id', $authorUser->id)->first();
-        if (!$author) {
+        if (! $author) {
             return response()->json(['error' => 'Author profile not found'], 404);
         }
 
-        // Keep the original slug to maintain URL consistency
-        $slug = $article->slug;
+        // The original slug is maintained. If the title is dirty and slug is empty, the Model boot handles it.
 
-        // Update article data
         $data = [
             'title' => $request->title,
             'content' => $request->input('content'),
             'author_id' => $author->id,
-            'slug' => $slug,
             'excerpt' => Str::limit($request->input('content'), 150),
         ];
-        
+
         // Handle status update
         if ($request->has('status')) {
             $data['status'] = $request->status;
-            if ($request->status === 'published' && !$article->published_at) {
+            if ($request->status === 'published' && ! $article->published_at) {
                 $data['published_at'] = now();
             }
         }
@@ -280,8 +357,9 @@ class ArticleController extends Controller
                     $data['featured_image'] = $imagePath;
                 }
             } catch (\Exception $e) {
-                \Log::error('Cloudinary upload exception during update: ' . $e->getMessage());
-                // Continue without updating image rather than failing the entire article update
+                \Log::error('Cloudinary upload exception during update: '.$e->getMessage());
+
+                return response()->json(['error' => 'Featured image failed to upload to Cloudinary. Please try again.'], 422);
             }
         }
 
@@ -321,7 +399,7 @@ class ArticleController extends Controller
 
             return response()->json(['message' => 'Article deleted successfully']);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to delete article: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Failed to delete article: '.$e->getMessage()], 500);
         }
     }
 
@@ -334,6 +412,7 @@ class ArticleController extends Controller
 
         if ($existing) {
             $existing->delete();
+
             return response()->json(['liked' => false, 'likes_count' => $article->interactions()->where('type', 'liked')->count()]);
         }
 
@@ -368,10 +447,10 @@ class ArticleController extends Controller
 
         $articles = Article::whereHas('interactions', function ($query) {
             $query->where('user_id', Auth::id())
-                  ->where('type', 'liked');
+                ->where('type', 'liked');
         })
-        ->with('author.user', 'categories', 'tags')
-        ->paginate($perPage, ['*'], 'page', $page);
+            ->with('author.user', 'categories', 'tags')
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json($articles);
     }
@@ -384,10 +463,10 @@ class ArticleController extends Controller
 
         $articles = Article::whereHas('interactions', function ($query) {
             $query->where('user_id', Auth::id())
-                  ->where('type', 'shared');
+                ->where('type', 'shared');
         })
-        ->with('author.user', 'categories', 'tags')
-        ->paginate($perPage, ['*'], 'page', $page);
+            ->with('author.user', 'categories', 'tags')
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json($articles);
     }
@@ -395,7 +474,7 @@ class ArticleController extends Controller
     public function getArticlesByAuthor(Request $request, $authorId)
     {
         $author = Author::find($authorId);
-        if (!$author) {
+        if (! $author) {
             return response()->json(['error' => 'Author not found'], 404);
         }
 
@@ -413,7 +492,7 @@ class ArticleController extends Controller
         // Validate pagination parameters
         $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
         $page = max((int) $request->get('page', 1), 1);
-        
+
         $articles = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Add article count to response
@@ -422,7 +501,7 @@ class ArticleController extends Controller
         return response()->json([
             'articles' => $articles,
             'article_count' => $articleCount,
-            'author' => $author->load('user')
+            'author' => $author->load('user'),
         ]);
     }
 
@@ -430,7 +509,7 @@ class ArticleController extends Controller
     public function getArticlesByAuthorPublic(Request $request, $authorId)
     {
         $author = Author::find($authorId);
-        if (!$author) {
+        if (! $author) {
             return response()->json(['error' => 'Author not found'], 404);
         }
 
@@ -448,7 +527,7 @@ class ArticleController extends Controller
         // Validate pagination parameters
         $perPage = min(max((int) $request->get('per_page', 10), 1), 100);
         $page = max((int) $request->get('page', 1), 1);
-        
+
         $articles = $query->paginate($perPage, ['*'], 'page', $page);
 
         $articleCount = Article::where('author_id', $authorId)->count();
@@ -456,7 +535,7 @@ class ArticleController extends Controller
         return response()->json([
             'articles' => $articles,
             'article_count' => $articleCount,
-            'author' => $author->load('user')
+            'author' => $author->load('user'),
         ]);
     }
 }

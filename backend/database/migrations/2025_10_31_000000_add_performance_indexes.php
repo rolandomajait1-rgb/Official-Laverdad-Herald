@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration adds performance indexes to improve query speed
      * and support higher user capacity.
      */
@@ -16,7 +16,9 @@ return new class extends Migration
     {
         // Add index on articles.published_at for faster sorting
         Schema::table('articles', function (Blueprint $table) {
-            if (!Schema::hasColumn('articles', 'published_at')) return;
+            if (! Schema::hasColumn('articles', 'published_at')) {
+                return;
+            }
             $table->index('published_at', 'idx_articles_published_at');
             $table->index('status', 'idx_articles_status');
             $table->index(['author_id', 'status'], 'idx_articles_author_status');

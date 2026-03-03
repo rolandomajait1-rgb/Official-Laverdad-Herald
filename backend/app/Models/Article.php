@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class Article extends Model
 {
@@ -30,13 +30,14 @@ class Article extends Model
     ];
 
     protected $appends = ['featured_image_url', 'is_liked', 'likes_count'];
-    
+
     public function getLikesCountAttribute()
     {
         // Use eager loaded count if available
         if (array_key_exists('likes_count', $this->attributes)) {
             return $this->attributes['likes_count'];
         }
+
         return $this->interactions()->where('type', 'liked')->count();
     }
 
@@ -46,10 +47,11 @@ class Article extends Model
         if (array_key_exists('is_liked', $this->attributes)) {
             return (bool) $this->attributes['is_liked'];
         }
-        
+
         if (Auth::check()) {
             return $this->interactions()->where('user_id', Auth::id())->where('type', 'liked')->exists();
         }
+
         return false;
     }
 
@@ -57,28 +59,26 @@ class Article extends Model
     {
         if (isset($this->attributes['featured_image']) && $this->attributes['featured_image']) {
             $path = $this->attributes['featured_image'];
-            
+
             // Check if it's already a full URL (external or cloud storage)
             if (str_starts_with($path, 'http')) {
                 return $path;
             }
-            
+
             // Generate the storage URL
-            $url = config('app.url') . '/storage/' . $path;
-            
+            $url = config('app.url').'/storage/'.$path;
+
             // Force HTTPS in production
-            if (config('app.env') !== 'local' && !str_starts_with($url, 'https://')) {
+            if (config('app.env') !== 'local' && ! str_starts_with($url, 'https://')) {
                 $url = str_replace('http://', 'https://', $url);
             }
-            
+
             return $url;
         }
-        
+
         // Return placeholder image if no featured image
         return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
     }
-    
-
 
     public function author(): BelongsTo
     {
@@ -124,12 +124,12 @@ class Article extends Model
                 $baseSlug = Str::slug($article->title);
                 $slug = $baseSlug;
                 $counter = 1;
-                
+
                 while (Article::where('slug', $slug)->exists()) {
-                    $slug = $baseSlug . '-' . $counter;
+                    $slug = $baseSlug.'-'.$counter;
                     $counter++;
                 }
-                
+
                 $article->slug = $slug;
             }
         });

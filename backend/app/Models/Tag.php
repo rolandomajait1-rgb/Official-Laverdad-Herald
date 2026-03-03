@@ -30,12 +30,12 @@ class Tag extends Model
                 $baseSlug = Str::slug($tag->name);
                 $slug = $baseSlug;
                 $counter = 1;
-                
+
                 while (static::where('slug', $slug)->exists()) {
-                    $slug = $baseSlug . '-' . $counter;
+                    $slug = $baseSlug.'-'.$counter;
                     $counter++;
                 }
-                
+
                 $tag->slug = $slug;
             }
         });
@@ -45,12 +45,12 @@ class Tag extends Model
                 $baseSlug = Str::slug($tag->name);
                 $slug = $baseSlug;
                 $counter = 1;
-                
+
                 while (static::where('slug', $slug)->where('id', '!=', $tag->id)->exists()) {
-                    $slug = $baseSlug . '-' . $counter;
+                    $slug = $baseSlug.'-'.$counter;
                     $counter++;
                 }
-                
+
                 $tag->slug = $slug;
             }
         });

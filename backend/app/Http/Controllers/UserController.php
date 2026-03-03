@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Log;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function getCurrentUser(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
     public function index()
     {
         $users = User::paginate(10);
+
         return view('users.index', compact('users'));
     }
 
@@ -62,7 +68,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'role' => 'required|in:admin,moderator,editor,author,subscriber',
         ]);
 
@@ -102,6 +108,7 @@ class UserController extends Controller
     public function getModerators()
     {
         $moderators = User::where('role', 'moderator')->get();
+
         return response()->json($moderators)
             ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
             ->header('Access-Control-Allow-Credentials', 'true')
@@ -117,7 +124,7 @@ class UserController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             // Create new user if doesn't exist
             $user = User::create([
                 'name' => explode('moderator@example.com', $request->email)[0],

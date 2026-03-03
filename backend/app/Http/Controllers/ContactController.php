@@ -11,7 +11,7 @@ class ContactController extends Controller
     {
         $request->validate([
             'feedback' => 'required|string',
-            'email' => 'required|email'
+            'email' => 'required|email',
         ]);
 
         Mail::raw(
@@ -34,7 +34,7 @@ class ContactController extends Controller
             'eventName' => 'required|string',
             'date' => 'required|date',
             'description' => 'required|string',
-            'contactEmail' => 'required|email'
+            'contactEmail' => 'required|email',
         ]);
 
         Mail::raw(
@@ -58,7 +58,7 @@ class ContactController extends Controller
             'course' => 'required|string',
             'gender' => 'required|string',
             'pubName' => 'required|string',
-            'specificPosition' => 'required|string'
+            'specificPosition' => 'required|string',
         ]);
 
         $classifications = json_encode($request->classifications ?? []);
@@ -92,7 +92,7 @@ class ContactController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'name' => 'nullable|string|max:255'
+            'name' => 'nullable|string|max:255',
         ]);
 
         $subscriberService = app(\App\Services\SubscriberService::class);
@@ -102,7 +102,7 @@ class ContactController extends Controller
         );
 
         return response()->json([
-            'message' => $result['message']
+            'message' => $result['message'],
         ], $result['success'] ? 200 : 400)
             ->header('Access-Control-Allow-Origin', 'http://localhost:5173')
             ->header('Access-Control-Allow-Methods', 'POST, OPTIONS')

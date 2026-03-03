@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tag;
 use App\Models\Log;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -17,6 +17,7 @@ class TagController extends Controller
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json($tags);
         }
+
         return view('tags.index', compact('tags'));
     }
 
@@ -47,6 +48,7 @@ class TagController extends Controller
         if (request()->wantsJson()) {
             return response()->json($tag, 201);
         }
+
         return redirect()->route('tags.index')->with('success', 'Tag created successfully.');
     }
 
@@ -78,7 +80,7 @@ class TagController extends Controller
     public function update(Request $request, Tag $tag)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:tags,name,' . $tag->id,
+            'name' => 'required|string|max:255|unique:tags,name,'.$tag->id,
         ]);
 
         $oldValues = $tag->toArray();

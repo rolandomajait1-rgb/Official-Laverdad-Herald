@@ -15,3 +15,8 @@ Route::get('/sanctum/csrf-cookie', function () {
 Route::get('/verification-pending', function () {
     return view('verification-pending');
 })->name('verification.pending');
+
+// Fallback login route for unauthenticated browser requests
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');

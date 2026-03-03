@@ -1,0 +1,87 @@
+﻿PHPUnit 11.5.44 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.13
+Configuration: C:\Official Laverdad Herald\backend\phpunit.xml
+
+...............EEE..........F...                                  32 / 32 (100%)
+
+Time: 00:01.936, Memory: 56.00 MB
+
+There were 3 errors:
+
+1) Tests\Feature\ArticleImagePreservationTest::test_valid_image_uploads_are_accepted
+ErrorException: Trying to access array offset on null
+
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php:258
+C:\Official Laverdad Herald\backend\vendor\cloudinary-labs\cloudinary-laravel\src\CloudinaryServiceProvider.php:64
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1154
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:972
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1078
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:903
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1058
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1856
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:240
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:211
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:171
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:146
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:132
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:104
+C:\Official Laverdad Herald\backend\tests\Feature\ArticleImagePreservationTest.php:166
+
+2) Tests\Feature\ArticleImageStorageTest::test_article_images_are_stored_in_cloudinary_not_local_filesystem
+ErrorException: Trying to access array offset on null
+
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php:258
+C:\Official Laverdad Herald\backend\vendor\cloudinary-labs\cloudinary-laravel\src\CloudinaryServiceProvider.php:64
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1154
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:972
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1078
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:903
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1058
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1856
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:240
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:211
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:171
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:146
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:132
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:104
+C:\Official Laverdad Herald\backend\tests\Feature\ArticleImageStorageTest.php:39
+
+3) Tests\Feature\ArticleImageStorageTest::test_article_image_updates_use_cloudinary_storage
+ErrorException: Trying to access array offset on null
+
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Bootstrap\HandleExceptions.php:258
+C:\Official Laverdad Herald\backend\vendor\cloudinary-labs\cloudinary-laravel\src\CloudinaryServiceProvider.php:64
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1154
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:972
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1078
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:903
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1058
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1856
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:240
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:211
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:171
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:146
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:132
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php:104
+C:\Official Laverdad Herald\backend\tests\Feature\ArticleImageStorageTest.php:100
+
+--
+
+There was 1 failure:
+
+1) Tests\Feature\EmailVerificationFlowTest::test_expired_signature_is_rejected_by_verification_route
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'http://localhost:5173/login?error=invalid_verification_link'
++'http://localhost/login'
+
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:408
+C:\Official Laverdad Herald\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:205
+C:\Official Laverdad Herald\backend\tests\Feature\EmailVerificationFlowTest.php:96
+
+ERRORS!
+Tests: 32, Assertions: 92, Errors: 3, Failures: 1.

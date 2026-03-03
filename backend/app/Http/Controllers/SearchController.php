@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Article;
+use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
@@ -16,14 +16,14 @@ class SearchController extends Controller
                 ->with('author.user', 'categories')
                 ->where(function ($query) use ($q) {
                     $query->where('title', 'like', "%$q%")
-                          ->orWhere('excerpt', 'like', "%$q%")
-                          ->orWhere('content', 'like', "%$q%")
-                          ->orWhereHas('author.user', function ($qry) use ($q) {
-                              $qry->where('name', 'like', "%$q%");
-                          })
-                          ->orWhereHas('tags', function ($qry) use ($q) {
-                              $qry->where('name', 'like', "%$q%");
-                          });
+                        ->orWhere('excerpt', 'like', "%$q%")
+                        ->orWhere('content', 'like', "%$q%")
+                        ->orWhereHas('author.user', function ($qry) use ($q) {
+                            $qry->where('name', 'like', "%$q%");
+                        })
+                        ->orWhereHas('tags', function ($qry) use ($q) {
+                            $qry->where('name', 'like', "%$q%");
+                        });
                 })
                 ->latest('published_at')
                 ->paginate(10);
@@ -32,5 +32,3 @@ class SearchController extends Controller
         return view('search.index', compact('articles', 'q'));
     }
 }
-
-

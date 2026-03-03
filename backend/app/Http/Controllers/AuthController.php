@@ -2,26 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\LoginRequest;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetPasswordRequest;
-use App\Services\AuthService;
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     private AuthService $authService;
-    
+
     public function __construct(AuthService $authService)
     {
         $this->authService = $authService;
     }
-    
+
     public function showLoginForm()
     {
         return view('auth.login');
@@ -31,7 +31,7 @@ class AuthController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return back()->withErrors([
                 'email' => 'The provided credentials do not match our records.',
             ]);
@@ -45,20 +45,21 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        
+
         return redirect()->intended('/dashboard');
     }
 
     public function loginApi(LoginRequest $request)
     {
         $user = User::where('email', $request->email)->first();
-        
-        if (!$user) {
+
+        if (! $user) {
             Hash::check($request->password, '$2y$12$dummyhashtopreventtimingattack');
+
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
@@ -66,12 +67,13 @@ class AuthController extends Controller
 
         if (is_null($user->email_verified_at)) {
             Auth::logout();
+
             return response()->json([
                 'message' => 'Please verify your email before logging in. Check your inbox for verification link.',
-                'requires_verification' => true
+                'requires_verification' => true,
             ], 403);
         }
-        
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json(['token' => $token, 'role' => $user->role, 'user' => $user]);
@@ -86,11 +88,11 @@ class AuthController extends Controller
     {
         try {
             $this->authService->createUserWithVerification($request->validated());
-            
+
             return redirect('/verification-pending')->with('success', 'Registration successful! Please check your email to verify your account.');
         } catch (\Exception $e) {
             return back()->withErrors([
-                'email' => 'Registration failed. Please try again.'
+                'email' => 'Registration failed. Please try again.',
             ]);
         }
     }
@@ -99,14 +101,14 @@ class AuthController extends Controller
     {
         try {
             $user = $this->authService->createUserWithVerification($request->validated());
-            
+
             return response()->json([
                 'message' => 'Registration successful! Please check your email to verify your account before logging in.',
-                'user_id' => $user->id
+                'user_id' => $user->id,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Registration failed. Please try again.'
+                'message' => 'Registration failed. Please try again.',
             ], 500);
         }
     }
@@ -136,11 +138,11 @@ class AuthController extends Controller
                 $request->current_password,
                 $request->password
             );
-            
-            if (!$result['success']) {
+
+            if (! $result['success']) {
                 return response()->json(['message' => $result['message']], 400);
             }
-            
+
             return response()->json(['message' => $result['message']]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Password change failed'], 500);
@@ -158,56 +160,79 @@ class AuthController extends Controller
                 $request->user(),
                 $request->password
             );
-            
-            if (!$result['success']) {
+
+            if (! $result['success']) {
                 return response()->json(['message' => $result['message']], 400);
             }
-            
+
             return response()->json(['message' => $result['message']]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Account deletion failed'], 500);
         }
     }
 
+    public function verifyEmail(Request $request)
+    {
+        if (! $request->hasValidSignature()) {
+            return redirect(config('app.frontend_url').'/login?error=invalid_verification_link');
+        }
+
+        $user = User::findOrFail($request->route('id'));
+
+        if (! hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
+            return redirect(config('app.frontend_url').'/login?error=invalid_verification_link');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect(config('app.frontend_url').'/login?verified=1&message=already_verified');
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new \Illuminate\Auth\Events\Verified($user));
+        }
+
+        return response()->json(['message' => 'Email verified successfully'], 200);
+    }
+
     public function verifyEmailToken(Request $request)
     {
         $token = $request->query('token');
-        
+
         // Check for rate limiting by IP
-        $cacheKey = 'verify_attempts_' . $request->ip();
+        $cacheKey = 'verify_attempts_'.$request->ip();
         $attempts = Cache::get($cacheKey, 0);
-        
+
         if ($attempts >= 10) {
-            return redirect(config('app.frontend_url') . '/login?error=too_many_attempts');
+            return redirect(config('app.frontend_url').'/login?error=too_many_attempts');
         }
 
         $result = $this->authService->verifyUserEmail($token);
-        
-        if (!$result['success']) {
+
+        if (! $result['success']) {
             Cache::put($cacheKey, $attempts + 1, now()->addMinutes(15));
-            
+
             $errorMessage = $result['message'];
             if ($errorMessage === 'already_verified') {
-                return redirect(config('app.frontend_url') . '/login?verified=1&message=already_verified');
+                return redirect(config('app.frontend_url').'/login?verified=1&message=already_verified');
             }
-            
-            return redirect(config('app.frontend_url') . '/login?error=' . $errorMessage);
+
+            return redirect(config('app.frontend_url').'/login?error='.$errorMessage);
         }
-        
+
         // Clear rate limit on successful verification
         Cache::forget($cacheKey);
 
-        return redirect(config('app.frontend_url') . '/login?verified=1');
+        return redirect(config('app.frontend_url').'/login?verified=1');
     }
 
     public function resendVerificationEmail(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-        
+
         $result = $this->authService->resendVerification($request->email);
-        
+
         return response()->json([
-            'message' => $result['message']
+            'message' => $result['message'],
         ], 200);
     }
 
@@ -218,7 +243,7 @@ class AuthController extends Controller
         $result = $this->authService->initiatePasswordReset($request->email);
 
         return response()->json([
-            'message' => $result['message']
+            'message' => $result['message'],
         ], 200);
     }
 
@@ -230,12 +255,13 @@ class AuthController extends Controller
                 $request->token,
                 $request->password
             );
-            
-            if (!$result['success']) {
+
+            if (! $result['success']) {
                 $statusCode = $result['message'] === 'User not found' ? 404 : 400;
+
                 return response()->json(['message' => $result['message']], $statusCode);
             }
-            
+
             return response()->json(['message' => $result['message']], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Password reset failed'], 500);

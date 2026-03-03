@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Helpers\CorsHelper;
+use App\Models\Log;
 use App\Models\Staff;
 use App\Models\User;
-use App\Models\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Helpers\CorsHelper;
 
 class StaffController extends Controller
 {
     public function index()
     {
         $staff = Staff::with('user')->paginate(10);
+
         return CorsHelper::addHeaders(response()->json($staff));
     }
 
@@ -69,7 +70,7 @@ class StaffController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $staff->user_id,
+            'email' => 'required|email|unique:users,email,'.$staff->user_id,
             'role' => 'required|in:admin,moderator,editor',
         ]);
 

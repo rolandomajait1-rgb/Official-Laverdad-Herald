@@ -28,7 +28,7 @@ class LoginRequest extends FormRequest
                 'password' => 'required',
             ];
         }
-        
+
         // For API login, allow any email
         return [
             'email' => 'required|email',

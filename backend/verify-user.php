@@ -23,7 +23,7 @@ if ($user) {
 } else {
     echo "✗ User not found: {$email}\n";
     echo "\nAvailable users:\n";
-    \App\Models\User::all()->each(function($u) {
+    \App\Models\User::all()->each(function ($u) {
         $verified = $u->email_verified_at ? '✓ Verified' : '✗ Not verified';
         echo "  - {$u->email} ({$verified})\n";
     });

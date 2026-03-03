@@ -4,41 +4,42 @@
  * API Test Script - La Verdad Herald
  * Tests all critical endpoints
  */
-
 $baseUrl = 'http://localhost:8000';
 $testResults = [];
-$testEmail = 'qatest' . time() . '@student.laverdad.edu.ph';
+$testEmail = 'qatest'.time().'@student.laverdad.edu.ph';
 $testPassword = 'Password123';
 $authToken = null;
 
-function makeRequest($method, $url, $data = null, $headers = []) {
+function makeRequest($method, $url, $data = null, $headers = [])
+{
     $ch = curl_init();
-    
+
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    
+
     if ($data) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         $headers[] = 'Content-Type: application/json';
     }
-    
-    if (!empty($headers)) {
+
+    if (! empty($headers)) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     }
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    
+
     return [
         'status' => $httpCode,
         'body' => json_decode($response, true),
-        'raw' => $response
+        'raw' => $response,
     ];
 }
 
-function testCase($name, $expected, $actual, $details = '') {
+function testCase($name, $expected, $actual, $details = '')
+{
     global $testResults;
     $passed = $expected == $actual;
     $testResults[] = [
@@ -46,15 +47,17 @@ function testCase($name, $expected, $actual, $details = '') {
         'expected' => $expected,
         'actual' => $actual,
         'passed' => $passed,
-        'details' => $details
+        'details' => $details,
     ];
-    
+
     $status = $passed ? '✅ PASS' : '❌ FAIL';
     echo "$status - $name\n";
-    if (!$passed) {
+    if (! $passed) {
         echo "  Expected: $expected\n";
         echo "  Actual: $actual\n";
-        if ($details) echo "  Details: $details\n";
+        if ($details) {
+            echo "  Details: $details\n";
+        }
     }
     echo "\n";
 }
@@ -83,7 +86,7 @@ $response = makeRequest('POST', "$baseUrl/api/register", [
     'name' => 'Test User',
     'email' => 'test@gmail.com',
     'password' => 'Password123',
-    'password_confirmation' => 'Password123'
+    'password_confirmation' => 'Password123',
 ]);
 testCase('Invalid email domain returns 422', 422, $response['status']);
 
@@ -94,7 +97,7 @@ $response = makeRequest('POST', "$baseUrl/api/register", [
     'name' => 'Test User',
     'email' => $testEmail,
     'password' => 'weak',
-    'password_confirmation' => 'weak'
+    'password_confirmation' => 'weak',
 ]);
 testCase('Weak password returns 422', 422, $response['status']);
 
@@ -105,7 +108,7 @@ $response = makeRequest('POST', "$baseUrl/api/register", [
     'name' => 'QA Test User',
     'email' => $testEmail,
     'password' => $testPassword,
-    'password_confirmation' => $testPassword
+    'password_confirmation' => $testPassword,
 ]);
 testCase('Valid registration returns 201', 201, $response['status']);
 testCase('Response contains user', true, isset($response['body']['user']));
@@ -117,7 +120,7 @@ $response = makeRequest('POST', "$baseUrl/api/register", [
     'name' => 'Another User',
     'email' => $testEmail,
     'password' => $testPassword,
-    'password_confirmation' => $testPassword
+    'password_confirmation' => $testPassword,
 ]);
 testCase('Duplicate email returns 422', 422, $response['status']);
 
@@ -126,7 +129,7 @@ echo "TEST 7: Login Before Email Verification\n";
 echo "───────────────────────────────────────────────────────────────\n";
 $response = makeRequest('POST', "$baseUrl/api/login", [
     'email' => $testEmail,
-    'password' => $testPassword
+    'password' => $testPassword,
 ]);
 testCase('Unverified login returns 403', 403, $response['status']);
 testCase('Response has requires_verification', true, isset($response['body']['requires_verification']));
@@ -136,7 +139,7 @@ echo "TEST 8: Login with Wrong Password\n";
 echo "───────────────────────────────────────────────────────────────\n";
 $response = makeRequest('POST', "$baseUrl/api/login", [
     'email' => $testEmail,
-    'password' => 'WrongPassword123'
+    'password' => 'WrongPassword123',
 ]);
 testCase('Wrong password returns 401', 401, $response['status']);
 
@@ -145,7 +148,7 @@ echo "TEST 9: Login with Non-existent User\n";
 echo "───────────────────────────────────────────────────────────────\n";
 $response = makeRequest('POST', "$baseUrl/api/login", [
     'email' => 'nonexistent@student.laverdad.edu.ph',
-    'password' => 'Password123'
+    'password' => 'Password123',
 ]);
 testCase('Non-existent user returns 401', 401, $response['status']);
 
@@ -177,7 +180,7 @@ testCase('Protected route without token returns 401', 401, $response['status']);
 echo "TEST 14: Forgot Password\n";
 echo "───────────────────────────────────────────────────────────────\n";
 $response = makeRequest('POST', "$baseUrl/api/forgot-password", [
-    'email' => $testEmail
+    'email' => $testEmail,
 ]);
 testCase('Forgot password returns 200', 200, $response['status']);
 
@@ -187,7 +190,7 @@ echo "  TEST SUMMARY\n";
 echo "═══════════════════════════════════════════════════════════════\n\n";
 
 $total = count($testResults);
-$passed = count(array_filter($testResults, fn($t) => $t['passed']));
+$passed = count(array_filter($testResults, fn ($t) => $t['passed']));
 $failed = $total - $passed;
 $passRate = round(($passed / $total) * 100, 2);
 
@@ -200,7 +203,7 @@ if ($failed > 0) {
     echo "FAILED TESTS:\n";
     echo "───────────────────────────────────────────────────────────────\n";
     foreach ($testResults as $test) {
-        if (!$test['passed']) {
+        if (! $test['passed']) {
             echo "❌ {$test['name']}\n";
             echo "   Expected: {$test['expected']}\n";
             echo "   Actual: {$test['actual']}\n\n";

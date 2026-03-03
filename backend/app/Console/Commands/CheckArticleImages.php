@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class CheckArticleImages extends Command
 {
     protected $signature = 'articles:check-images {--limit=5 : Number of articles to check} {--all : Check all articles}';
+
     protected $description = 'Check article images and verify file existence';
 
     public function handle()
@@ -19,15 +20,16 @@ class CheckArticleImages extends Command
         try {
             $limit = $this->option('all') ? null : (int) $this->option('limit');
             $query = Article::select(['id', 'title', 'featured_image']);
-            
+
             if ($limit) {
                 $query->take($limit);
             }
-            
+
             $articles = $query->get();
 
             if ($articles->isEmpty()) {
                 $this->warn('No articles found in database.');
+
                 return Command::SUCCESS;
             }
 
@@ -39,7 +41,7 @@ class CheckArticleImages extends Command
             foreach ($articles as $article) {
                 $stats['total']++;
                 $result = $this->displayArticleInfo($article);
-                
+
                 if ($result['has_image']) {
                     $stats['with_image']++;
                     if ($result['exists']) {
@@ -55,7 +57,8 @@ class CheckArticleImages extends Command
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $this->error('Failed to check articles: ' . $e->getMessage());
+            $this->error('Failed to check articles: '.$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -64,58 +67,58 @@ class CheckArticleImages extends Command
     {
         $this->line("Article ID: {$article->id}");
         $this->line("Title: {$article->title}");
-        $this->line("Featured Image Path: " . ($article->featured_image ?: '<fg=yellow>NULL</>'));
-        $this->line("Featured Image URL: " . ($article->featured_image_url ?: '<fg=yellow>NULL</>'));
-        
+        $this->line('Featured Image Path: '.($article->featured_image ?: '<fg=yellow>NULL</>'));
+        $this->line('Featured Image URL: '.($article->featured_image_url ?: '<fg=yellow>NULL</>'));
+
         $result = ['has_image' => false, 'exists' => false];
-        
+
         if ($article->featured_image) {
             $result['has_image'] = true;
             $result['exists'] = $this->checkFileExistence($article->featured_image);
         }
-        
+
         $this->newLine();
-        
+
         return $result;
     }
 
     private function checkFileExistence(string $imagePath): bool
     {
-        $fullPath = storage_path('app/public/' . $imagePath);
+        $fullPath = storage_path('app/public/'.$imagePath);
         $exists = file_exists($fullPath);
-        
+
         if ($exists) {
-            $this->line("File exists locally: <fg=green>YES</>");
-            
+            $this->line('File exists locally: <fg=green>YES</>');
+
             // Check file size
             $size = filesize($fullPath);
             $sizeFormatted = $this->formatBytes($size);
             $this->line("File size: {$sizeFormatted}");
         } else {
-            $this->line("File exists locally: <fg=red>NO</>");
+            $this->line('File exists locally: <fg=red>NO</>');
             $this->line("Expected path: <fg=yellow>{$fullPath}</>");
         }
-        
+
         return $exists;
     }
 
     private function displayStoragePaths(): void
     {
         $this->info('Storage Configuration:');
-        $this->line("Storage path: " . storage_path('app/public'));
-        $this->line("Public path: " . public_path('storage'));
-        
+        $this->line('Storage path: '.storage_path('app/public'));
+        $this->line('Public path: '.public_path('storage'));
+
         // Check if symlink exists
         $symlinkExists = is_link(public_path('storage'));
         $symlinkStatus = $symlinkExists ? '<fg=green>EXISTS</>' : '<fg=red>MISSING</>';
         $this->line("Symlink status: {$symlinkStatus}");
-        
-        if (!$symlinkExists) {
+
+        if (! $symlinkExists) {
             $this->newLine();
             $this->warn('⚠ Storage symlink is missing!');
             $this->line('Run: <fg=cyan>php artisan storage:link</>');
         }
-        
+
         $this->newLine();
     }
 
@@ -125,7 +128,7 @@ class CheckArticleImages extends Command
         $this->line("Total articles checked: {$stats['total']}");
         $this->line("Articles with images: {$stats['with_image']}");
         $this->line("Images found: <fg=green>{$stats['exists']}</>");
-        
+
         if ($stats['missing'] > 0) {
             $this->line("Images missing: <fg=red>{$stats['missing']}</>");
         } else {
@@ -140,7 +143,7 @@ class CheckArticleImages extends Command
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
         $bytes /= (1 << (10 * $pow));
-        
-        return round($bytes, 2) . ' ' . $units[$pow];
+
+        return round($bytes, 2).' '.$units[$pow];
     }
 }

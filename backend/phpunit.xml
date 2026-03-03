@@ -31,5 +31,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="CLOUDINARY_CLOUD_NAME" value="mock_cloud"/>
+        <env name="CLOUDINARY_API_KEY" value="mock_key"/>
+        <env name="CLOUDINARY_API_SECRET" value="mock_secret"/>
+        <env name="CLOUDINARY_URL" value="cloudinary://mock_key:mock_secret@mock_cloud"/>
     </php>
 </phpunit>

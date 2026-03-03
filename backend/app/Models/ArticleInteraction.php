@@ -27,4 +27,3 @@ class ArticleInteraction extends Model
         return $this->belongsTo(Article::class);
     }
 }
-

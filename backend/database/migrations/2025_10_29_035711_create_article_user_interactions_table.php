@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('article_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['liked', 'shared']); // Track liked and shared
             $table->timestamps();
-            
+
             $table->unique(['user_id', 'article_id', 'type']); // Prevent duplicate interactions
         });
     }

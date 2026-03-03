@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 /**
  * Property 2: Preservation Tests - Non-Image Article Behavior
- * 
+ *
  * These tests verify that non-buggy scenarios continue to work correctly after the fix.
  * EXPECTED OUTCOME: Tests PASS (confirms baseline behavior is preserved)
  */
@@ -27,16 +27,16 @@ class ArticleImagePreservationTest extends TestCase
     {
         // Arrange
         $author = Author::factory()->create();
-        
+
         // Create article without featured_image
         $article = Article::factory()->create([
             'author_id' => $author->id,
             'featured_image' => null,
         ]);
-        
+
         // Act
         $imageUrl = $article->featured_image_url;
-        
+
         // Assert
         $this->assertEquals(
             'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald',
@@ -52,23 +52,23 @@ class ArticleImagePreservationTest extends TestCase
     {
         // Arrange
         $author = Author::factory()->create();
-        
+
         $testUrls = [
             'https://example.com/image.jpg',
             'http://example.com/image.png',
             'https://res.cloudinary.com/demo/image/upload/sample.jpg',
         ];
-        
+
         foreach ($testUrls as $url) {
             // Create article with full URL
             $article = Article::factory()->create([
                 'author_id' => $author->id,
                 'featured_image' => $url,
             ]);
-            
+
             // Act
             $imageUrl = $article->featured_image_url;
-            
+
             // Assert
             $this->assertEquals($url, $imageUrl,
                 "Article with URL {$url} should return the same URL unchanged");
@@ -83,10 +83,10 @@ class ArticleImagePreservationTest extends TestCase
         // Arrange
         $admin = User::factory()->create(['role' => 'admin']);
         $category = Category::factory()->create();
-        
+
         // Test invalid file type (gif)
         $invalidTypeImage = UploadedFile::fake()->image('test.gif');
-        
+
         $articleData = [
             'title' => 'Test Article',
             'content' => 'Test content',
@@ -95,23 +95,23 @@ class ArticleImagePreservationTest extends TestCase
             'author_name' => $admin->name,
             'featured_image' => $invalidTypeImage,
         ];
-        
+
         // Act & Assert - Invalid file type should be rejected
         $response = $this->actingAs($admin, 'sanctum')
             ->postJson('/api/articles', $articleData);
-        
+
         $response->assertStatus(422)
             ->assertJsonValidationErrors('featured_image');
-        
+
         // Test oversized file (>5120KB)
         $oversizedImage = UploadedFile::fake()->image('large.jpg')->size(6000);
-        
+
         $articleData['featured_image'] = $oversizedImage;
-        
+
         // Act & Assert - Oversized file should be rejected
         $response = $this->actingAs($admin, 'sanctum')
             ->postJson('/api/articles', $articleData);
-        
+
         $response->assertStatus(422)
             ->assertJsonValidationErrors('featured_image');
     }
@@ -124,7 +124,7 @@ class ArticleImagePreservationTest extends TestCase
         // Arrange
         $author = Author::factory()->create();
         $category = Category::factory()->create();
-        
+
         $article = Article::factory()->create([
             'author_id' => $author->id,
             'featured_image' => 'https://example.com/test.jpg',
@@ -132,16 +132,16 @@ class ArticleImagePreservationTest extends TestCase
             'published_at' => now(),
         ]);
         $article->categories()->attach($category);
-        
+
         // Act - Query with eager loading
         $response = $this->getJson('/api/articles/public');
-        
+
         // Assert
         $response->assertStatus(200);
-        
+
         $articles = $response->json('data');
         $this->assertNotEmpty($articles);
-        
+
         $foundArticle = collect($articles)->firstWhere('id', $article->id);
         $this->assertNotNull($foundArticle, 'Article should be in response');
         $this->assertArrayHasKey('featured_image_url', $foundArticle,
@@ -157,12 +157,20 @@ class ArticleImagePreservationTest extends TestCase
         // Arrange
         $admin = User::factory()->create(['role' => 'admin']);
         $category = Category::factory()->create();
-        
+
+        // Mock Cloudinary
+        $mockResult = \Mockery::mock();
+        $mockResult->shouldReceive('getSecurePath')
+            ->andReturn('https://res.cloudinary.com/demo/image/upload/sample.jpg');
+
+        \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::shouldReceive('upload')
+            ->andReturn($mockResult);
+
         $validFormats = ['jpg', 'jpeg', 'png'];
-        
+
         foreach ($validFormats as $format) {
             $validImage = UploadedFile::fake()->image("test.{$format}", 800, 600)->size(1000);
-            
+
             $articleData = [
                 'title' => "Test Article {$format}",
                 'content' => 'Test content',
@@ -171,14 +179,14 @@ class ArticleImagePreservationTest extends TestCase
                 'author_name' => $admin->name,
                 'featured_image' => $validImage,
             ];
-            
+
             // Act
             $response = $this->actingAs($admin, 'sanctum')
                 ->postJson('/api/articles', $articleData);
-            
+
             // Assert
             $response->assertStatus(201);
-            
+
             $article = Article::latest()->first();
             $this->assertNotNull($article->featured_image,
                 "Valid {$format} image should be uploaded successfully");

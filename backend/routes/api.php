@@ -1,22 +1,19 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\TagController;
-use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DraftController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\StaffController;
-use App\Http\Controllers\AuthorController;
-use App\Http\Controllers\DraftController;
-use App\Http\Controllers\UserController;
-use App\Models\Category;
-use App\Models\Article;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ContactController;
+use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\TeamMemberController;
+use App\Http\Controllers\UserController;
+use App\Models\Article;
+use Illuminate\Support\Facades\Route;
 
 // Team Members Routes
 Route::get('/team-members', [TeamMemberController::class, 'index']);
@@ -34,6 +31,7 @@ Route::middleware('throttle:3,1')->post('/forgot-password', [AuthController::cla
 
 // Email Verification Routes
 Route::middleware('throttle:10,1')->get('/email/verify-token', [AuthController::class, 'verifyEmailToken'])->name('verification.verify.token');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
 Route::middleware('throttle:3,1')->post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
 
 // Contact Form Routes
@@ -47,181 +45,19 @@ Route::get('/unsubscribe', [SubscriberController::class, 'unsubscribe']);
 
 // Public Categories with caching
 Route::get('/categories', [CategoryController::class, 'index'])->middleware('cache.headers:public;max_age=600');
-Route::get('/categories/{category}/articles', function ($category) {
-    $articles = Article::published()
-        ->with('author.user', 'categories')
-        ->whereHas('categories', function($q) use ($category) {
-            $q->where('name', 'ILIKE', $category);
-        })
-        ->latest('published_at')
-        ->take(12)
-        ->get();
-        
-    return response()->json(['data' => $articles]);
-});
+Route::get('/categories/{category}/articles', [CategoryController::class, 'getArticlesByCategory']);
 
 // Public Articles with caching
 Route::get('/articles/public', [ArticleController::class, 'publicIndex'])->middleware('cache.headers:public;max_age=300');
-Route::get('/articles/search', function (Request $request) {
-    $query = $request->get('q', '');
-    $page = max(1, (int) $request->get('page', 1));
-    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
-    
-    $query = trim($query);
-    $query = str_replace('\\', '\\\\', $query);
-    $query = str_replace(['%', '_'], ['\\%', '\\_'], $query);
-    
-    if (strlen($query) < 3) {
-        return response()->json([
-            'data' => [],
-            'meta' => [
-                'current_page' => 1,
-                'per_page' => $perPage,
-                'total' => 0,
-                'last_page' => 1
-            ]
-        ]);
-    }
-    
-    if (strlen($query) > 100) {
-        return response()->json(['message' => 'Search query too long'], 400);
-    }
-    
-    $articles = Article::published()
-        ->with('author.user', 'categories')
-        ->where(function($q) use ($query) {
-            $q->where('title', 'ILIKE', "%{$query}%")
-              ->orWhere('excerpt', 'ILIKE', "%{$query}%")
-              ->orWhere('content', 'ILIKE', "%{$query}%");
-        })
-        ->latest('published_at')
-        ->paginate($perPage, ['*'], 'page', $page);
-        
-    return response()->json([
-        'data' => $articles->items(),
-        'meta' => [
-            'current_page' => $articles->currentPage(),
-            'per_page' => $articles->perPage(),
-            'total' => $articles->total(),
-            'last_page' => $articles->lastPage()
-        ]
-    ]);
-});
-
-Route::get('/articles/by-slug/{slug}', function ($slug) {
-    $article = Article::published()
-        ->with('author.user', 'categories', 'tags')
-        ->where('slug', $slug)
-        ->firstOrFail();
-        
-    return response()->json($article);
-});
-
-Route::get('/articles/id/{id}', function ($id) {
-    $article = Article::with('author.user', 'categories', 'tags')->find($id);
-    if (!$article) {
-        return response()->json(['message' => 'Article not found'], 404);
-    }
-
-    return response()->json($article);
-});
-
+Route::get('/articles/search', [ArticleController::class, 'publicSearch']);
+Route::get('/articles/by-slug/{slug}', [ArticleController::class, 'publicBySlug']);
+Route::get('/articles/id/{id}', [ArticleController::class, 'publicById']);
 Route::get('/articles/author-public/{authorId}', [ArticleController::class, 'getArticlesByAuthorPublic']);
-
-Route::get('/latest-articles', function () {
-    $articles = \Illuminate\Support\Facades\Cache::remember('latest_articles', 300, function () {
-        return Article::published()
-            ->with('author.user', 'categories')
-            ->latest('published_at')
-            ->take(6)
-            ->get();
-    });
-        
-    return response()->json($articles);
-});
+Route::get('/latest-articles', [ArticleController::class, 'latestArticles']);
 
 // Public Authors with pagination
-Route::get('/authors', function (Request $request) {
-    $page = max(1, (int) $request->get('page', 1));
-    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
-    
-    $authors = \App\Models\Author::with('user:id,name,email')
-        ->paginate($perPage, ['*'], 'page', $page);
-    
-    $formattedAuthors = $authors->map(function($author) {
-        return [
-            'id' => $author->id,
-            'name' => $author->name,
-            'user_id' => $author->user_id,
-            'bio' => $author->bio,
-            'website' => $author->website,
-        ];
-    });
-    
-    return response()->json([
-        'data' => $formattedAuthors,
-        'meta' => [
-            'current_page' => $authors->currentPage(),
-            'per_page' => $authors->perPage(),
-            'total' => $authors->total(),
-            'last_page' => $authors->lastPage()
-        ]
-    ]);
-});
-
-Route::get('/authors/{authorName}', function (Request $request, $authorName) {
-    Log::info('Looking for author/user: ' . $authorName);
-
-    $user = \App\Models\User::where('name', $authorName)
-        ->orWhere('email', $authorName)
-        ->first();
-
-    if (!$user) {
-        return response()->json(['message' => 'Author not found'], 404);
-    }
-
-    $author = \App\Models\Author::where('user_id', $user->id)->first();
-    if (!$author) {
-        return response()->json(['message' => 'Author profile not found'], 404);
-    }
-
-    $page = max(1, (int) $request->get('page', 1));
-    $perPage = min(50, max(10, (int) $request->get('per_page', 20)));
-
-    $articles = Article::with('author.user', 'categories')
-        ->where('author_id', $author->id)
-        ->latest('created_at')
-        ->paginate($perPage, ['*'], 'page', $page);
-
-    $formattedArticles = $articles->map(function ($article) {
-        return [
-            'id' => $article->id,
-            'title' => $article->title,
-            'content' => $article->content,
-            'excerpt' => $article->excerpt,
-            'image_url' => $article->featured_image_url,
-            'category' => $article->categories->first()?->name ?? 'Uncategorized',
-            'author' => $article->author->name,
-            'created_at' => $article->created_at,
-            'slug' => $article->slug,
-            'status' => $article->status
-        ];
-    });
-
-    return response()->json([
-        'author' => [
-            'name' => $user->name,
-            'articleCount' => $articles->total()
-        ],
-        'articles' => $formattedArticles,
-        'meta' => [
-            'current_page' => $articles->currentPage(),
-            'per_page' => $articles->perPage(),
-            'total' => $articles->total(),
-            'last_page' => $articles->lastPage()
-        ]
-    ]);
-});
+Route::get('/authors', [AuthorController::class, 'publicIndex']);
+Route::get('/authors/{authorName}', [AuthorController::class, 'publicAuthorsByName']);
 
 // Public Tags with caching
 Route::get('/tags', [TagController::class, 'index'])->middleware('cache.headers:public;max_age=600');
@@ -235,9 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Protected Article Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return response()->json($request->user());
-    });
+    Route::get('/user', [UserController::class, 'getCurrentUser']);
 
     Route::post('/logout', [AuthController::class, 'logoutApi']);
     Route::post('/change-password', [AuthController::class, 'changePasswordApi']);
@@ -271,83 +105,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin & Moderator Shared Routes
     Route::middleware(['role:admin,moderator'])->group(function () {
-        Route::get('/admin/dashboard-stats', function (Request $request) {
-            $users = \App\Models\User::count();
-            $articles = \App\Models\Article::where('status', 'published')->count();
-            $drafts = \App\Models\Article::where('status', 'draft')->count();
-            $views = \App\Models\ArticleInteraction::where('type', 'shared')->count();
-            $likes = \App\Models\ArticleInteraction::where('type', 'liked')->count();
-
-            return response()->json([
-                'users' => $users,
-                'articles' => $articles,
-                'drafts' => $drafts,
-                'views' => $views,
-                'likes' => $likes
-            ]);
-        });
-
-        Route::get('/admin/recent-activity', function (Request $request) {
-            $activities = [];
-            
-            $recentArticles = \App\Models\Article::with('author.user')
-                ->where('status', 'published')
-                ->latest('published_at')
-                ->take(20)
-                ->get();
-            
-            foreach ($recentArticles as $article) {
-                $activities[] = [
-                    'action' => 'Published',
-                    'title' => $article->title,
-                    'user' => $article->author->user->email ?? 'Unknown',
-                    'timestamp' => $article->published_at->format('n/j/Y g:i A')
-                ];
-            }
-            
-            return response()->json($activities);
-        });
-
-        Route::get('/admin/audit-logs', function (Request $request) {
-            $logs = \App\Models\Log::with('user')
-                ->orderBy('created_at', 'desc')
-                ->take(50)
-                ->get()
-                ->map(function ($log) {
-                    return [
-                        'action' => $log->action,
-                        'article_title' => $log->model_type === 'App\\Models\\Article' ? \App\Models\Article::find($log->model_id)?->title : null,
-                        'user_email' => $log->user?->email,
-                        'created_at' => $log->created_at,
-                    ];
-                });
-
-            return response()->json($logs);
-        });
+        Route::get('/admin/dashboard-stats', [\App\Http\Controllers\DashboardController::class, 'apiStats']);
+        Route::get('/admin/recent-activity', [\App\Http\Controllers\DashboardController::class, 'apiRecentActivity']);
+        Route::get('/admin/audit-logs', [\App\Http\Controllers\DashboardController::class, 'apiAuditLogs']);
     });
 
     // Admin-Only Routes
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/admin/check-access', function (Request $request) {
-            return response()->json(['is_admin' => $request->user()->isAdmin()]);
-        });
-
-        Route::get('/admin/stats', function (Request $request) {
-            $totalArticles = \App\Models\Article::count();
-            $totalUsers = \App\Models\User::count();
-            $totalViews = \App\Models\ArticleInteraction::where('type', 'shared')->count();
-            $recentArticles = \App\Models\Article::with('author.user', 'categories')
-                ->latest('published_at')
-                ->take(5)
-                ->get();
-
-            return response()->json([
-                'totalArticles' => $totalArticles,
-                'totalUsers' => $totalUsers,
-                'totalViews' => $totalViews,
-                'recentArticles' => $recentArticles
-            ]);
-        });
+        Route::get('/admin/check-access', [\App\Http\Controllers\UserController::class, 'checkAdminAccess']);
+        Route::get('/admin/stats', [\App\Http\Controllers\DashboardController::class, 'apiAdminFullStats']);
 
         Route::get('/admin/moderators', [\App\Http\Controllers\UserController::class, 'getModerators']);
         Route::post('/admin/moderators', [\App\Http\Controllers\UserController::class, 'addModerator']);

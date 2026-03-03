@@ -90,10 +90,10 @@ class EmailVerificationFlowTest extends TestCase
             ]
         );
 
-        $requestUri = parse_url($expiredUrl, PHP_URL_PATH) . '?' . parse_url($expiredUrl, PHP_URL_QUERY);
+        $requestUri = parse_url($expiredUrl, PHP_URL_PATH).'?'.parse_url($expiredUrl, PHP_URL_QUERY);
         $response = $this->get($requestUri);
 
-        $response->assertRedirect(config('app.frontend_url') . '/login?error=invalid_verification_link');
+        $response->assertRedirect(config('app.frontend_url').'/login?error=invalid_verification_link');
         $this->assertNull($user->fresh()->email_verified_at);
     }
 

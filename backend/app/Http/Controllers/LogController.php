@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Log;
-use Illuminate\Http\Request;
 
 class LogController extends Controller
 {
@@ -14,6 +13,7 @@ class LogController extends Controller
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json($logs);
         }
+
         return view('logs.index', compact('logs'));
     }
 
@@ -23,6 +23,7 @@ class LogController extends Controller
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json($log);
         }
+
         return view('logs.show', compact('log'));
     }
 }

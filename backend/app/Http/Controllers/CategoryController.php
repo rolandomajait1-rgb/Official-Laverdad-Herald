@@ -36,6 +36,7 @@ class CategoryController extends Controller
                 ],
             ]);
         }
+
         return response()->json($categories);
     }
 
@@ -67,6 +68,7 @@ class CategoryController extends Controller
         if (request()->wantsJson()) {
             return response()->json($category, 201);
         }
+
         return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
@@ -75,6 +77,7 @@ class CategoryController extends Controller
         if (request()->wantsJson()) {
             return response()->json($category);
         }
+
         return view('categories.show', compact('category'));
     }
 
@@ -101,7 +104,7 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'required|string|max:255|unique:categories,name,'.$category->id,
             'description' => 'nullable|string',
         ]);
 
@@ -124,6 +127,7 @@ class CategoryController extends Controller
         if (request()->wantsJson()) {
             return response()->json($category);
         }
+
         return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
 
@@ -144,6 +148,22 @@ class CategoryController extends Controller
         if (request()->wantsJson()) {
             return response()->json(['message' => 'Category deleted successfully']);
         }
+
         return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
+    }
+
+    // Public API endpoint replacement for closure in api.php
+    public function getArticlesByCategory($category)
+    {
+        $articles = \App\Models\Article::published()
+            ->with('author.user', 'categories')
+            ->whereHas('categories', function ($q) use ($category) {
+                $q->where('name', 'ILIKE', $category);
+            })
+            ->latest('published_at')
+            ->take(12)
+            ->get();
+
+        return response()->json(['data' => $articles]);
     }
 }

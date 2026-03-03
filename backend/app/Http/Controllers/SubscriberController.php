@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Subscriber;
 use App\Models\Log;
+use App\Models\Subscriber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,7 +12,7 @@ class SubscriberController extends Controller
     public function index()
     {
         $subscribers = Subscriber::paginate(10);
-        
+
         // Return JSON for API requests
         if (request()->wantsJson() || request()->is('api/*')) {
             return response()->json([
@@ -22,10 +22,10 @@ class SubscriberController extends Controller
                     'per_page' => $subscribers->perPage(),
                     'total' => $subscribers->total(),
                     'last_page' => $subscribers->lastPage(),
-                ]
+                ],
             ]);
         }
-        
+
         return view('subscribers.index', compact('subscribers'));
     }
 
@@ -71,7 +71,7 @@ class SubscriberController extends Controller
     public function update(Request $request, Subscriber $subscriber)
     {
         $request->validate([
-            'email' => 'required|email|unique:subscribers,email,' . $subscriber->id,
+            'email' => 'required|email|unique:subscribers,email,'.$subscriber->id,
             'name' => 'nullable|string|max:255',
             'status' => 'in:active,inactive,unsubscribed',
         ]);
@@ -129,26 +129,26 @@ class SubscriberController extends Controller
 
         return back()->withErrors(['email' => $result['message']]);
     }
-    
+
     // Public unsubscribe endpoint
     public function unsubscribe(Request $request)
     {
         $token = $request->query('token');
-        
-        if (!$token) {
-            return redirect(config('app.frontend_url') . '/?error=invalid_token');
+
+        if (! $token) {
+            return redirect(config('app.frontend_url').'/?error=invalid_token');
         }
-        
+
         $subscriberService = app(\App\Services\SubscriberService::class);
         $result = $subscriberService->unsubscribe($token);
-        
+
         if ($result['success']) {
-            return redirect(config('app.frontend_url') . '/?unsubscribed=1');
+            return redirect(config('app.frontend_url').'/?unsubscribed=1');
         }
-        
-        return redirect(config('app.frontend_url') . '/?error=invalid_token');
+
+        return redirect(config('app.frontend_url').'/?error=invalid_token');
     }
-    
+
     // Admin: Send newsletter to all subscribers
     public function sendNewsletter(Request $request)
     {
@@ -156,16 +156,16 @@ class SubscriberController extends Controller
             'subject' => 'required|string|max:255',
             'content' => 'required|string',
         ]);
-        
+
         $subscriberService = app(\App\Services\SubscriberService::class);
         $result = $subscriberService->sendNewsletter(
             $request->subject,
             $request->content
         );
-        
+
         return response()->json([
             'message' => "Newsletter sent to {$result['sent']} subscribers",
-            'statistics' => $result
+            'statistics' => $result,
         ]);
     }
 }

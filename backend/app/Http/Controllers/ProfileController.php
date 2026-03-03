@@ -13,12 +13,14 @@ class ProfileController extends Controller
         $user = Auth::user();
         $likedArticles = $user->likedArticles()->published()->get();
         $sharedArticles = $user->sharedArticles()->published()->get();
+
         return view('profile.show', compact('user', 'likedArticles', 'sharedArticles'));
     }
 
     public function edit()
     {
         $user = Auth::user();
+
         return view('profile.edit', compact('user'));
     }
 
@@ -28,7 +30,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -52,7 +54,7 @@ class ProfileController extends Controller
 
         $user = Auth::user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
@@ -69,7 +71,7 @@ class ProfileController extends Controller
             'password' => 'required',
         ]);
 
-        if (!Hash::check($request->password, Auth::user()->password)) {
+        if (! Hash::check($request->password, Auth::user()->password)) {
             return back()->withErrors(['password' => 'Password is incorrect.']);
         }
 
@@ -78,4 +80,3 @@ class ProfileController extends Controller
         return redirect('/')->with('success', 'Account deleted successfully.');
     }
 }
-

@@ -17,17 +17,17 @@ if ($users->isEmpty()) {
     foreach ($users as $user) {
         $verified = $user->email_verified_at ? '✓ VERIFIED' : '✗ NOT VERIFIED';
         $verifiedDate = $user->email_verified_at ? " (on {$user->email_verified_at})" : '';
-        
+
         echo "Email: {$user->email}\n";
         echo "Name:  {$user->name}\n";
         echo "Role:  {$user->role}\n";
         echo "Status: {$verified}{$verifiedDate}\n";
         echo "───────────────────────────────────────────────────────────────\n";
     }
-    
-    echo "\nTotal users: " . $users->count() . "\n";
-    echo "Verified: " . $users->whereNotNull('email_verified_at')->count() . "\n";
-    echo "Unverified: " . $users->whereNull('email_verified_at')->count() . "\n";
+
+    echo "\nTotal users: ".$users->count()."\n";
+    echo 'Verified: '.$users->whereNotNull('email_verified_at')->count()."\n";
+    echo 'Unverified: '.$users->whereNull('email_verified_at')->count()."\n";
 }
 
 echo "\n═══════════════════════════════════════════════════════════════\n";

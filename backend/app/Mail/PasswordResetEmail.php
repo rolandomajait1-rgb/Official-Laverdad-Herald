@@ -12,6 +12,7 @@ class PasswordResetEmail extends Mailable
     use Queueable, SerializesModels;
 
     public $user;
+
     public $resetUrl;
 
     public function __construct(User $user, string $resetUrl)
@@ -23,6 +24,6 @@ class PasswordResetEmail extends Mailable
     public function build()
     {
         return $this->subject('Reset Your Password')
-                    ->view('emails.reset-password');
+            ->view('emails.reset-password');
     }
 }

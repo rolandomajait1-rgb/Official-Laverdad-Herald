@@ -10,13 +10,13 @@ return new class extends Migration
     {
         // Add indexes for performance and security
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'password_changed_at')) {
+            if (! Schema::hasColumn('users', 'password_changed_at')) {
                 $table->timestamp('password_changed_at')->nullable()->after('password');
             }
-            if (!Schema::hasColumn('users', 'last_login_at')) {
+            if (! Schema::hasColumn('users', 'last_login_at')) {
                 $table->timestamp('last_login_at')->nullable()->after('password_changed_at');
             }
-            if (!Schema::hasColumn('users', 'last_login_ip')) {
+            if (! Schema::hasColumn('users', 'last_login_ip')) {
                 $table->string('last_login_ip')->nullable()->after('last_login_at');
             }
         });

@@ -14,13 +14,13 @@ echo "Hash: {$hash}\n\n";
 try {
     $user = App\Models\User::findOrFail($userId);
     echo "User found: {$user->name} ({$user->email})\n";
-    echo "Email verified: " . ($user->hasVerifiedEmail() ? 'YES' : 'NO') . "\n\n";
-    
+    echo 'Email verified: '.($user->hasVerifiedEmail() ? 'YES' : 'NO')."\n\n";
+
     $expectedHash = sha1($user->getEmailForVerification());
     echo "Expected hash: {$expectedHash}\n";
     echo "Provided hash: {$hash}\n";
-    echo "Hashes match: " . (hash_equals($hash, $expectedHash) ? 'YES' : 'NO') . "\n\n";
-    
+    echo 'Hashes match: '.(hash_equals($hash, $expectedHash) ? 'YES' : 'NO')."\n\n";
+
     if (hash_equals($hash, $expectedHash)) {
         if ($user->hasVerifiedEmail()) {
             echo "User is already verified!\n";
@@ -28,14 +28,14 @@ try {
             echo "Marking user as verified...\n";
             $user->markEmailAsVerified();
             echo "✓ User verified successfully!\n";
-            
+
             // Check again
             $user->refresh();
-            echo "Verification status: " . ($user->hasVerifiedEmail() ? 'VERIFIED' : 'NOT VERIFIED') . "\n";
+            echo 'Verification status: '.($user->hasVerifiedEmail() ? 'VERIFIED' : 'NOT VERIFIED')."\n";
         }
     } else {
         echo "✗ Hash mismatch - verification failed!\n";
     }
 } catch (\Exception $e) {
-    echo "✗ Error: " . $e->getMessage() . "\n";
+    echo '✗ Error: '.$e->getMessage()."\n";
 }
