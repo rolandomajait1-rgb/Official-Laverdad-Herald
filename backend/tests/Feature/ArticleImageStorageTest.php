@@ -6,9 +6,11 @@ use App\Models\Article;
 use App\Models\Author;
 use App\Models\Category;
 use App\Models\User;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 /**
@@ -29,6 +31,14 @@ class ArticleImageStorageTest extends TestCase
      */
     public function test_article_images_are_stored_in_cloudinary_not_local_filesystem()
     {
+        // Mock Cloudinary to avoid interactive prompts
+        $mockResult = Mockery::mock();
+        $mockResult->shouldReceive('getSecurePath')
+            ->andReturn('https://res.cloudinary.com/da9wvkqcl/image/upload/v1234567890/articles/test-image.jpg');
+        
+        Cloudinary::shouldReceive('upload')
+            ->andReturn($mockResult);
+        
         // Arrange
         $admin = User::factory()->create(['role' => 'admin']);
         $category = Category::factory()->create();
@@ -82,6 +92,14 @@ class ArticleImageStorageTest extends TestCase
      */
     public function test_article_image_updates_use_cloudinary_storage()
     {
+        // Mock Cloudinary to avoid interactive prompts
+        $mockResult = Mockery::mock();
+        $mockResult->shouldReceive('getSecurePath')
+            ->andReturn('https://res.cloudinary.com/da9wvkqcl/image/upload/v1234567890/articles/updated-image.jpg');
+        
+        Cloudinary::shouldReceive('upload')
+            ->andReturn($mockResult);
+        
         // Arrange
         $admin = User::factory()->create(['role' => 'admin']);
         $author = Author::factory()->create(['user_id' => $admin->id]);

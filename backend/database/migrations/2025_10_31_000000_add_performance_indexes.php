@@ -16,33 +16,54 @@ return new class extends Migration
     {
         // Add index on articles.published_at for faster sorting
         Schema::table('articles', function (Blueprint $table) {
+            if (!Schema::hasColumn('articles', 'published_at')) return;
             $table->index('published_at', 'idx_articles_published_at');
             $table->index('status', 'idx_articles_status');
             $table->index(['author_id', 'status'], 'idx_articles_author_status');
-            $table->index('view_count', 'idx_articles_view_count');
+            if (Schema::hasColumn('articles', 'view_count')) {
+                $table->index('view_count', 'idx_articles_view_count');
+            }
         });
 
         // Add indexes on pivot tables for faster joins
-        Schema::table('article_category', function (Blueprint $table) {
-            $table->index('article_id', 'idx_article_category_article');
-            $table->index('category_id', 'idx_article_category_category');
-        });
+        if (Schema::hasTable('article_category')) {
+            Schema::table('article_category', function (Blueprint $table) {
+                $table->index('article_id', 'idx_article_category_article');
+                $table->index('category_id', 'idx_article_category_category');
+            });
+        }
 
-        Schema::table('article_tag', function (Blueprint $table) {
-            $table->index('article_id', 'idx_article_tag_article');
-            $table->index('tag_id', 'idx_article_tag_tag');
-        });
+        if (Schema::hasTable('article_tag')) {
+            Schema::table('article_tag', function (Blueprint $table) {
+                $table->index('article_id', 'idx_article_tag_article');
+                $table->index('tag_id', 'idx_article_tag_tag');
+            });
+        }
+
+        // Add indexes on article_user_interactions for faster queries
+        if (Schema::hasTable('article_user_interactions')) {
+            Schema::table('article_user_interactions', function (Blueprint $table) {
+                $table->index(['article_id', 'type'], 'idx_article_interactions_article_type');
+                $table->index(['user_id', 'type'], 'idx_article_interactions_user_type');
+            });
+        }
 
         // Add index on subscribers.status for faster filtering
-        Schema::table('subscribers', function (Blueprint $table) {
-            $table->index('status', 'idx_subscribers_status');
-            $table->index('subscribed_at', 'idx_subscribers_subscribed_at');
-        });
+        if (Schema::hasTable('subscribers')) {
+            Schema::table('subscribers', function (Blueprint $table) {
+                $table->index('status', 'idx_subscribers_status');
+                if (Schema::hasColumn('subscribers', 'subscribed_at')) {
+                    $table->index('subscribed_at', 'idx_subscribers_subscribed_at');
+                }
+            });
+        }
 
         // Add index on sessions for faster cleanup
-        Schema::table('sessions', function (Blueprint $table) {
-            $table->index('last_activity', 'idx_sessions_last_activity');
-        });
+        if (Schema::hasTable('sessions')) {
+            Schema::table('sessions', function (Blueprint $table) {
+                $table->index('last_activity', 'idx_sessions_last_activity');
+            });
+        }
     }
 
     /**
@@ -50,30 +71,51 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('articles', function (Blueprint $table) {
-            $table->dropIndex('idx_articles_published_at');
-            $table->dropIndex('idx_articles_status');
-            $table->dropIndex('idx_articles_author_status');
-            $table->dropIndex('idx_articles_view_count');
-        });
+        if (Schema::hasTable('articles')) {
+            Schema::table('articles', function (Blueprint $table) {
+                $table->dropIndex('idx_articles_published_at');
+                $table->dropIndex('idx_articles_status');
+                $table->dropIndex('idx_articles_author_status');
+                if (Schema::hasColumn('articles', 'view_count')) {
+                    $table->dropIndex('idx_articles_view_count');
+                }
+            });
+        }
 
-        Schema::table('article_category', function (Blueprint $table) {
-            $table->dropIndex('idx_article_category_article');
-            $table->dropIndex('idx_article_category_category');
-        });
+        if (Schema::hasTable('article_category')) {
+            Schema::table('article_category', function (Blueprint $table) {
+                $table->dropIndex('idx_article_category_article');
+                $table->dropIndex('idx_article_category_category');
+            });
+        }
 
-        Schema::table('article_tag', function (Blueprint $table) {
-            $table->dropIndex('idx_article_tag_article');
-            $table->dropIndex('idx_article_tag_tag');
-        });
+        if (Schema::hasTable('article_tag')) {
+            Schema::table('article_tag', function (Blueprint $table) {
+                $table->dropIndex('idx_article_tag_article');
+                $table->dropIndex('idx_article_tag_tag');
+            });
+        }
 
-        Schema::table('subscribers', function (Blueprint $table) {
-            $table->dropIndex('idx_subscribers_status');
-            $table->dropIndex('idx_subscribers_subscribed_at');
-        });
+        if (Schema::hasTable('article_user_interactions')) {
+            Schema::table('article_user_interactions', function (Blueprint $table) {
+                $table->dropIndex('idx_article_interactions_article_type');
+                $table->dropIndex('idx_article_interactions_user_type');
+            });
+        }
 
-        Schema::table('sessions', function (Blueprint $table) {
-            $table->dropIndex('idx_sessions_last_activity');
-        });
+        if (Schema::hasTable('subscribers')) {
+            Schema::table('subscribers', function (Blueprint $table) {
+                $table->dropIndex('idx_subscribers_status');
+                if (Schema::hasColumn('subscribers', 'subscribed_at')) {
+                    $table->dropIndex('idx_subscribers_subscribed_at');
+                }
+            });
+        }
+
+        if (Schema::hasTable('sessions')) {
+            Schema::table('sessions', function (Blueprint $table) {
+                $table->dropIndex('idx_sessions_last_activity');
+            });
+        }
     }
 };
