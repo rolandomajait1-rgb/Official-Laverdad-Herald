@@ -35,4 +35,5 @@ EXPOSE ${PORT:-10000}
 
 # Start command
 CMD php artisan migrate --force && \
+    php artisan storage:link && \
     php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

@@ -8,6 +8,7 @@ use App\Models\Tag;
 use App\Models\ArticleInteraction;
 use App\Models\Author;
 use App\Models\User;
+use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,13 @@ use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
+    protected $cloudinaryService;
+
+    public function __construct(CloudinaryService $cloudinaryService)
+    {
+        $this->cloudinaryService = $cloudinaryService;
+    }
+
     public function index(Request $request)
     {
         $query = Article::with('author.user', 'categories', 'tags')
@@ -117,12 +125,12 @@ class ArticleController extends Controller
             $imagePath = null;
             if ($request->hasFile('featured_image')) {
                 try {
-                    $imagePath = $request->file('featured_image')->store('articles', 'public');
+                    $imagePath = $this->cloudinaryService->uploadImage($request->file('featured_image'));
                     if (!$imagePath) {
-                        \Log::error('Failed to store image - store() returned false');
+                        \Log::error('Failed to upload image to Cloudinary - uploadImage() returned empty');
                     }
                 } catch (\Exception $e) {
-                    \Log::error('Image upload exception: ' . $e->getMessage());
+                    \Log::error('Cloudinary upload exception: ' . $e->getMessage());
                     // Continue without image rather than failing the entire article creation
                     $imagePath = null;
                 }
@@ -269,7 +277,15 @@ class ArticleController extends Controller
         }
 
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('articles', 'public');
+            try {
+                $imagePath = $this->cloudinaryService->uploadImage($request->file('featured_image'));
+                if ($imagePath) {
+                    $data['featured_image'] = $imagePath;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Cloudinary upload exception during update: ' . $e->getMessage());
+                // Continue without updating image rather than failing the entire article update
+            }
         }
 
         $article->update($data);

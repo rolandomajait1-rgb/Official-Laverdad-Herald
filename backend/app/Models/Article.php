@@ -58,6 +58,11 @@ class Article extends Model
         if (isset($this->attributes['featured_image']) && $this->attributes['featured_image']) {
             $path = $this->attributes['featured_image'];
             
+            // Check if it's already a full URL (external or cloud storage)
+            if (str_starts_with($path, 'http')) {
+                return $path;
+            }
+            
             // Generate the storage URL
             $url = config('app.url') . '/storage/' . $path;
             
@@ -68,7 +73,9 @@ class Article extends Model
             
             return $url;
         }
-        return null;
+        
+        // Return placeholder image if no featured image
+        return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
     }
     
 

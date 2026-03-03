@@ -23,7 +23,9 @@
     ]
   },
   "then": {
-    "type": "askAgent",
-    "prompt": "Analyze the modified code for potential improvements. Focus on: 1) Code smells and anti-patterns, 2) Applicable design patterns, 3) Best practices for the language/framework, 4) Readability and maintainability improvements, 5) Performance optimizations. Provide specific, actionable suggestions while preserving existing functionality."
-  }
+    "type": "runCommand",
+    "command": "go\n"
+  },
+  "workspaceFolderName": "Official Laverdad Herald",
+  "shortName": "code-quality-analyzer"
 }

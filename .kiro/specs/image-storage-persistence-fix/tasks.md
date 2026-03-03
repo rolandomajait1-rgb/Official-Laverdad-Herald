@@ -1,0 +1,121 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Fault Condition** - Local Filesystem Storage Bug
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate images are stored locally instead of Cloudinary
+  - **Scoped PBT Approach**: Test with various image uploads (different sizes, formats) to confirm all go to local storage
+  - Test that when an article image is uploaded via ArticleController::store() or update(), the system stores to local filesystem ('articles/...') instead of Cloudinary URL ('https://res.cloudinary.com/...')
+  - Generate test cases with valid image files (jpeg, png, jpg) within size limits
+  - Assert that featured_image column contains local path pattern (starts with 'articles/') not Cloudinary URL pattern (starts with 'https://res.cloudinary.com/')
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves images are stored locally)
+  - Document counterexamples found (e.g., "upload test.jpg returns 'articles/xyz.jpg' instead of Cloudinary URL")
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 2.1, 2.2_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Non-Image Article Behavior
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy scenarios
+  - Test Case 1: Articles created without images should return placeholder URL
+    - Generate articles without featured_image field
+    - Assert getFeaturedImageUrlAttribute() returns 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald'
+  - Test Case 2: Articles with existing full HTTP/HTTPS URLs should return unchanged
+    - Generate articles with featured_image containing full URLs (http://, https://)
+    - Assert getFeaturedImageUrlAttribute() returns the same URL without modification
+  - Test Case 3: Image validation constraints should remain enforced
+    - Test invalid file types (e.g., .gif, .bmp) are rejected
+    - Test oversized files (>5120KB) are rejected
+    - Assert validation errors are thrown appropriately
+  - Test Case 4: Articles queried with eager loading should append featured_image_url
+    - Query articles with relationships loaded
+    - Assert response includes featured_image_url attribute
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+- [-] 3. Fix for image storage persistence
+
+  - [x] 3.1 Create Cloudinary upload service
+    - Create app/Services/CloudinaryService.php with uploadImage() method
+    - Method should accept UploadedFile and return Cloudinary secure URL
+    - Use Cloudinary::upload() with 'folder' => 'articles' option
+    - Return the secure_url from Cloudinary response
+    - Handle upload failures gracefully with exceptions
+    - _Bug_Condition: isBugCondition(upload) where upload uses local filesystem store('articles', 'public')_
+    - _Expected_Behavior: Upload to Cloudinary and return full HTTPS URL (https://res.cloudinary.com/...)_
+    - _Preservation: Maintain validation rules, placeholder behavior, and existing URL handling_
+    - _Requirements: 2.1, 2.2_
+
+  - [x] 3.2 Update ArticleController::store() to use Cloudinary
+    - Inject CloudinaryService into controller
+    - Replace $request->file('featured_image')->store('articles', 'public') with CloudinaryService::uploadImage()
+    - Store the returned Cloudinary URL in featured_image column
+    - Maintain existing try-catch error handling
+    - Keep transaction wrapper for atomicity
+    - _Bug_Condition: isBugCondition(upload) where upload uses local filesystem_
+    - _Expected_Behavior: Store Cloudinary URL in database_
+    - _Preservation: Keep validation, error handling, and transaction logic unchanged_
+    - _Requirements: 2.1, 2.2, 3.3_
+
+  - [x] 3.3 Update ArticleController::update() to use Cloudinary
+    - Use CloudinaryService::uploadImage() for image updates
+    - Replace $request->file('featured_image')->store('articles', 'public') with CloudinaryService::uploadImage()
+    - Store the returned Cloudinary URL in featured_image column
+    - Maintain existing authorization and validation logic
+    - _Bug_Condition: isBugCondition(upload) where upload uses local filesystem_
+    - _Expected_Behavior: Store Cloudinary URL in database_
+    - _Preservation: Keep authorization, validation, and update logic unchanged_
+    - _Requirements: 2.1, 2.2, 3.3_
+
+  - [x] 3.4 Update Article model getFeaturedImageUrlAttribute()
+    - Simplify logic: if featured_image starts with 'http', return as-is (already Cloudinary URL)
+    - Remove local filesystem URL generation logic for new Cloudinary URLs
+    - Keep placeholder logic for null/empty featured_image
+    - Maintain backward compatibility for any legacy local paths (though they'll be broken after restart)
+    - _Bug_Condition: isBugCondition(path) where path is local filesystem reference_
+    - _Expected_Behavior: Return Cloudinary URLs directly without modification_
+    - _Preservation: Keep placeholder behavior and existing URL passthrough_
+    - _Requirements: 2.4, 3.1, 3.2_
+
+  - [x] 3.5 Create migration command for existing local images
+    - Create artisan command: php artisan articles:migrate-images-to-cloudinary
+    - Query all articles where featured_image does NOT start with 'http'
+    - For each local image path, check if file exists in storage/app/public/
+    - If exists, upload to Cloudinary and update database with new URL
+    - If not exists, log warning and skip (already lost)
+    - Provide progress output and summary statistics
+    - _Bug_Condition: isBugCondition(article) where article.featured_image is local path_
+    - _Expected_Behavior: Migrate local images to Cloudinary and update database_
+    - _Preservation: Do not modify articles without images or with existing URLs_
+    - _Requirements: 2.5_
+
+  - [ ] 3.6 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Cloudinary Storage Verification
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms images are now stored in Cloudinary
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed - images stored in Cloudinary)
+    - _Requirements: 2.1, 2.2_
+
+  - [ ] 3.7 Verify preservation tests still pass
+    - **Property 2: Preservation** - Non-Image Article Behavior
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Verify placeholder images still work
+    - Verify existing URLs still pass through unchanged
+    - Verify validation constraints still enforced
+    - Verify eager loading still appends featured_image_url
+    - Confirm all tests still pass after fix (no regressions)
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite to verify all tests pass
+  - Manually test image upload in development environment
+  - Verify Cloudinary dashboard shows uploaded images
+  - Ask the user if questions arise or if manual testing is needed
