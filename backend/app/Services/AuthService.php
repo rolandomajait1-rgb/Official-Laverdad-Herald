@@ -176,56 +176,36 @@ class AuthService
     }
 
     /**
-     * Queue verification email send to application termination so HTTP response is not blocked.
+     * Send verification email synchronously to ensure delivery before the HTTP response kills the process.
      */
     private function sendVerificationEmailAfterResponse(User $user, string $token, string $source): void
     {
-        $send = function () use ($user, $token, $source): void {
-            try {
-                $this->mailService->sendVerificationEmail($user, $token);
-            } catch (\Throwable $e) {
-                Log::error('Verification email failed', [
-                    'source' => $source,
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        };
-
-        if (app()->runningInConsole()) {
-            $send();
-
-            return;
+        try {
+            $this->mailService->sendVerificationEmail($user, $token);
+        } catch (\Throwable $e) {
+            Log::error('Verification email failed', [
+                'source' => $source,
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        app()->terminating($send);
     }
 
     /**
-     * Queue password reset email send to application termination so HTTP response is not blocked.
+     * Send password reset email synchronously to ensure delivery before the HTTP response kills the process.
      */
     private function sendPasswordResetEmailAfterResponse(User $user, string $token): void
     {
-        $send = function () use ($user, $token): void {
-            try {
-                $this->mailService->sendPasswordResetEmail($user, $token);
-            } catch (\Throwable $e) {
-                Log::error('Password reset email failed', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        };
-
-        if (app()->runningInConsole()) {
-            $send();
-
-            return;
+        try {
+            $this->mailService->sendPasswordResetEmail($user, $token);
+        } catch (\Throwable $e) {
+            Log::error('Password reset email failed', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        app()->terminating($send);
     }
 
     /**
