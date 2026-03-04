@@ -127,9 +127,9 @@ class UserController extends Controller
         if (! $user) {
             // Create new user if doesn't exist
             $user = User::create([
-                'name' => explode('moderator@example.com', $request->email)[0],
+                'name' => explode('@', $request->email)[0],
                 'email' => $request->email,
-                'password' => Hash::make('password123'), // Default password
+                'password' => Hash::make(\Illuminate\Support\Str::password(16)), // Secure random password
                 'role' => 'moderator',
             ]);
 

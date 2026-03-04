@@ -21,7 +21,6 @@ Route::get('/health', [HealthController::class, 'check']);
 
 // Team Members Routes
 Route::get('/team-members', [TeamMemberController::class, 'index']);
-Route::middleware('auth:sanctum')->post('/team-members/update', [TeamMemberController::class, 'update']);
 
 // Public API Routes with Rate Limiting
 Route::middleware('throttle:10,1')->group(function () {
@@ -92,25 +91,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/articles/author/{authorId}', [ArticleController::class, 'getArticlesByAuthor']);
 
     // Categories API
-    Route::post('/categories', [CategoryController::class, 'store']);
     Route::get('/categories/{category}', [CategoryController::class, 'show']);
-    Route::put('/categories/{category}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
-
-    // Tags API
-    Route::post('/tags', [TagController::class, 'store']);
-    Route::put('/tags/{tag}', [TagController::class, 'update']);
-    Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
-
-    // Subscribers API
-    Route::apiResource('subscribers', SubscriberController::class);
-    Route::post('/subscribers/send-newsletter', [SubscriberController::class, 'sendNewsletter']);
 
     // Admin & Moderator Shared Routes
     Route::middleware(['role:admin,moderator'])->group(function () {
         Route::get('/admin/dashboard-stats', [\App\Http\Controllers\DashboardController::class, 'apiStats']);
         Route::get('/admin/recent-activity', [\App\Http\Controllers\DashboardController::class, 'apiRecentActivity']);
         Route::get('/admin/audit-logs', [\App\Http\Controllers\DashboardController::class, 'apiAuditLogs']);
+
+        // Categories API (Write)
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::put('/categories/{category}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+        // Tags API (Write)
+        Route::post('/tags', [TagController::class, 'store']);
+        Route::put('/tags/{tag}', [TagController::class, 'update']);
+        Route::delete('/tags/{tag}', [TagController::class, 'destroy']);
+
+        // Subscribers API
+        Route::apiResource('subscribers', SubscriberController::class);
+        Route::post('/subscribers/send-newsletter', [SubscriberController::class, 'sendNewsletter']);
+
+        // Team Members API
+        Route::post('/team-members/update', [TeamMemberController::class, 'update']);
     });
 
     // Admin-Only Routes

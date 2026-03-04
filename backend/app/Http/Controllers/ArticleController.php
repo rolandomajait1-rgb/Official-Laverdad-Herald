@@ -515,12 +515,8 @@ class ArticleController extends Controller
 
         $query = Article::where('author_id', $authorId)->with('author.user', 'categories', 'tags');
 
-        // Default to published only unless status specified
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        } else {
-            $query->published();
-        }
+        // Enforce published status for public endpoint unequivocally
+        $query->published();
 
         $query->latest('published_at');
 
