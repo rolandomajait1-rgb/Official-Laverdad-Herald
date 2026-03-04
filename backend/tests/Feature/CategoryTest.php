@@ -45,7 +45,7 @@ class CategoryTest extends TestCase
     public function test_authenticated_user_can_create_a_category()
     {
         // Arrange
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $categoryData = [
             'name' => 'New Category',
             'description' => 'A description for the new category.',
@@ -71,7 +71,7 @@ class CategoryTest extends TestCase
     public function test_create_category_requires_a_name()
     {
         // Arrange
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $categoryData = [
             'description' => 'A description without a name.',
         ];
