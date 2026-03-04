@@ -256,7 +256,7 @@ class AuthController extends Controller
             return 'Registration is temporarily unavailable because email service is not configured correctly.';
         }
 
-        return 'Registration failed. Please try again.';
+        return 'Registration failed: ' . $exception->getMessage();
     }
 
     private function registrationFailureStatusCode(\Throwable $exception): int

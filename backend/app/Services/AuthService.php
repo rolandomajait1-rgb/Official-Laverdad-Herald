@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\ArticleInteraction;
 use App\Models\Author;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -30,6 +31,7 @@ class AuthService
      */
     public function createUserWithVerification(array $data): User
     {
+        DB::beginTransaction();
         try {
             // Fail fast if mail settings are invalid so users are not registered without a deliverable verification email.
             $this->mailService->assertMailConfiguration();
@@ -45,11 +47,13 @@ class AuthService
             // Generate verification token
             $verificationToken = $this->tokenService->createVerificationToken($user);
 
-            // Send after response so registration API stays fast.
+            // Send synchronously BEFORE commit. If SMTP fails, the transaction rolls back.
             $this->sendVerificationEmailAfterResponse($user, $verificationToken->token, 'registration');
 
+            DB::commit();
             return $user;
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('User registration failed', [
                 'email' => $data['email'] ?? 'unknown',
                 'error' => $e->getMessage(),
@@ -189,6 +193,7 @@ class AuthService
                 'user_email' => $user->email,
                 'error' => $e->getMessage(),
             ]);
+            throw new \Exception("Failed to send verification email. SMTP Error: " . $e->getMessage());
         }
     }
 
