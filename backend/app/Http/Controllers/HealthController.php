@@ -39,6 +39,7 @@ class HealthController extends Controller
         return response()->json([
             'queue_connection' => config('queue.default'),
             'mail_mailer' => config('mail.default'),
+            'mail_url_set' => filled(env('MAIL_URL')),
             'mail_host' => config('mail.mailers.smtp.host'),
             'mail_port' => config('mail.mailers.smtp.port'),
             'mail_encryption' => config('mail.mailers.smtp.encryption'),
