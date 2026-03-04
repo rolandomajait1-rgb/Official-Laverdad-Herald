@@ -119,7 +119,7 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               required
-              pattern="[a-zA-Z0-9._%+-]+@student\.laverdad\.edu\.ph"
+              pattern="[^\\s@]+@student\\.laverdad\\.edu\\.ph"
               title="Please use your @student.laverdad.edu.ph email address"
               placeholder='Enter your email'
               autoComplete="email"
