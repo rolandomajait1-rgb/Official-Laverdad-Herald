@@ -154,8 +154,10 @@ class ArticleController extends Controller
 
     public function latestArticles()
     {
-        $articles = \Illuminate\Support\Facades\Cache::remember('latest_articles', 300, function () {
+        // Use a new cache key to avoid pulling the old bloated cache from the database
+        $articles = \Illuminate\Support\Facades\Cache::remember('latest_articles_optimized', 300, function () {
             return Article::published()
+                ->select('id', 'title', 'slug', 'excerpt', 'featured_image', 'published_at', 'author_id')
                 ->with('author.user', 'categories')
                 ->latest('published_at')
                 ->take(6)
