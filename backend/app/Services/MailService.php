@@ -11,6 +11,16 @@ use Illuminate\Support\Facades\Mail;
 class MailService
 {
     /**
+     * Validate configured mail settings before starting auth flows that require email delivery.
+     *
+     * @throws \RuntimeException
+     */
+    public function assertMailConfiguration(): void
+    {
+        $this->validateMailConfiguration();
+    }
+
+    /**
      * Ensure SMTP mailer has required settings before attempting network calls.
      *
      * @throws \RuntimeException
@@ -38,6 +48,38 @@ class MailService
 
         if ($missing !== []) {
             throw new \RuntimeException('Mail configuration incomplete: '.implode(', ', $missing));
+        }
+
+        $placeholderValues = [
+            'MAIL_USERNAME' => [
+                'your_brevo_username',
+                '<your_brevo_username>',
+            ],
+            'MAIL_PASSWORD' => [
+                'your_brevo_smtp_key_here',
+                '<your_brevo_password>',
+            ],
+            'MAIL_FROM_ADDRESS' => [
+                'noreply@yourdomain.com',
+                'hello@example.com',
+                'your@email.com',
+            ],
+        ];
+
+        $placeholderFields = [];
+        foreach ($placeholderValues as $name => $placeholders) {
+            $value = strtolower(trim((string) ($required[$name] ?? '')));
+            if ($value === '') {
+                continue;
+            }
+
+            if (in_array($value, $placeholders, true)) {
+                $placeholderFields[] = $name;
+            }
+        }
+
+        if ($placeholderFields !== []) {
+            throw new \RuntimeException('Mail configuration uses placeholder values: '.implode(', ', $placeholderFields));
         }
     }
 

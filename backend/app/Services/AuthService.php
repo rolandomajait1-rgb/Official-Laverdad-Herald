@@ -31,6 +31,9 @@ class AuthService
     public function createUserWithVerification(array $data): User
     {
         try {
+            // Fail fast if mail settings are invalid so users are not registered without a deliverable verification email.
+            $this->mailService->assertMailConfiguration();
+
             // Create user
             $user = User::create([
                 'name' => $data['name'],

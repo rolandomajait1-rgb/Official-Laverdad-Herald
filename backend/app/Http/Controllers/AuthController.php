@@ -91,8 +91,10 @@ class AuthController extends Controller
 
             return redirect('/verification-pending')->with('success', 'Registration successful! Please check your email to verify your account.');
         } catch (\Exception $e) {
+            $message = $this->registrationFailureMessage($e);
+
             return back()->withErrors([
-                'email' => 'Registration failed. Please try again.',
+                'email' => $message,
             ]);
         }
     }
@@ -107,9 +109,12 @@ class AuthController extends Controller
                 'user_id' => $user->id,
             ], 201);
         } catch (\Exception $e) {
+            $message = $this->registrationFailureMessage($e);
+            $statusCode = $this->registrationFailureStatusCode($e);
+
             return response()->json([
-                'message' => 'Registration failed. Please try again.',
-            ], 500);
+                'message' => $message,
+            ], $statusCode);
         }
     }
 
@@ -243,5 +248,25 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => 'Password reset failed'], 500);
         }
+    }
+
+    private function registrationFailureMessage(\Throwable $exception): string
+    {
+        if ($this->isMailConfigurationException($exception)) {
+            return 'Registration is temporarily unavailable because email service is not configured correctly.';
+        }
+
+        return 'Registration failed. Please try again.';
+    }
+
+    private function registrationFailureStatusCode(\Throwable $exception): int
+    {
+        return $this->isMailConfigurationException($exception) ? 503 : 500;
+    }
+
+    private function isMailConfigurationException(\Throwable $exception): bool
+    {
+        return $exception instanceof \RuntimeException &&
+            str_contains($exception->getMessage(), 'Mail configuration');
     }
 }

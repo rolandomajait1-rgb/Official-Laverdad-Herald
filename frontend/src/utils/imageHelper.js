@@ -3,6 +3,8 @@
  * Handles image URLs for both static assets and backend storage
  */
 
+import { API_BASE_URL } from './apiConfig';
+
 /**
  * Get URL for static assets in public/images folder
  * @param {string} filename - Image filename (e.g., 'logo.svg', 'bg.jpg')
@@ -24,13 +26,11 @@ export const getStorageUrl = (path) => {
   // If it's already a full URL
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // Replace localhost with production URL
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    return path.replace('http://localhost:8000', apiBaseUrl);
+    return path.replace('http://localhost:8000', API_BASE_URL);
   }
   
   // If it's a relative path, prepend API base URL
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-  return `${apiBaseUrl}${path}`;
+  return `${API_BASE_URL}${path}`;
 };
 
 /**
