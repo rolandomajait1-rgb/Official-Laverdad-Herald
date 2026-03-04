@@ -33,9 +33,6 @@ class AuthService
     {
         DB::beginTransaction();
         try {
-            // Fail fast if mail settings are invalid so users are not registered without a deliverable verification email.
-            $this->mailService->assertMailConfiguration();
-
             // Create user
             $user = User::create([
                 'name' => $data['name'],
@@ -47,8 +44,17 @@ class AuthService
             // Generate verification token
             $verificationToken = $this->tokenService->createVerificationToken($user);
 
-            // Send synchronously BEFORE commit. If SMTP fails, the transaction rolls back.
-            $this->sendVerificationEmailAfterResponse($user, $verificationToken->token, 'registration');
+            // Try to send email, but don't fail registration if it fails
+            try {
+                $this->mailService->sendVerificationEmail($user, $verificationToken->token);
+            } catch (\Exception $e) {
+                Log::warning('Verification email failed during registration - user created but email not sent', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+                // Continue - user is created, they can resend verification later
+            }
 
             DB::commit();
             return $user;
