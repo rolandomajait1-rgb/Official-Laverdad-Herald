@@ -26,7 +26,8 @@ class FixArticleImages extends Command
         $articlesWithMissingImages = [];
 
         foreach ($articles as $article) {
-            $fullPath = storage_path('app/public/'.$article->featured_image);
+            $rawImagePath = $article->getRawOriginal('featured_image');
+            $fullPath = storage_path('app/public/'.$rawImagePath);
             if (! file_exists($fullPath)) {
                 $articlesWithMissingImages[] = $article;
             }
@@ -70,9 +71,10 @@ class FixArticleImages extends Command
 
             $imageFile = $availableImages[$index];
             $newPath = 'articles/'.$imageFile->getFilename();
+            $rawImagePath = $article->getRawOriginal('featured_image');
 
             $this->line("Article ID {$article->id}: {$article->title}");
-            $this->line("  Old: {$article->featured_image}");
+            $this->line("  Old: {$rawImagePath}");
             $this->line("  New: {$newPath}");
 
             if (! $dryRun) {

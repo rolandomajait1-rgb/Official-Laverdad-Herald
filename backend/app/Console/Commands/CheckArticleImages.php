@@ -65,16 +65,18 @@ class CheckArticleImages extends Command
 
     private function displayArticleInfo(Article $article): array
     {
+        $rawImagePath = $article->getRawOriginal('featured_image');
+
         $this->line("Article ID: {$article->id}");
         $this->line("Title: {$article->title}");
-        $this->line('Featured Image Path: '.($article->featured_image ?: '<fg=yellow>NULL</>'));
+        $this->line('Featured Image Path: '.($rawImagePath ?: '<fg=yellow>NULL</>'));
         $this->line('Featured Image URL: '.($article->featured_image_url ?: '<fg=yellow>NULL</>'));
 
         $result = ['has_image' => false, 'exists' => false];
 
-        if ($article->featured_image) {
+        if ($rawImagePath) {
             $result['has_image'] = true;
-            $result['exists'] = $this->checkFileExistence($article->featured_image);
+            $result['exists'] = $this->checkFileExistence($rawImagePath);
         }
 
         $this->newLine();

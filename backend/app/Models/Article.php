@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Article extends Model
@@ -57,27 +58,71 @@ class Article extends Model
 
     public function getFeaturedImageUrlAttribute()
     {
-        if (isset($this->attributes['featured_image']) && $this->attributes['featured_image']) {
-            $path = $this->attributes['featured_image'];
+        return $this->resolveFeaturedImageUrl($this->getRawOriginal('featured_image'));
+    }
 
-            // Check if it's already a full URL (external or cloud storage)
-            if (str_starts_with($path, 'http')) {
+    public function getFeaturedImageAttribute($value)
+    {
+        return $this->resolveFeaturedImageUrl($value);
+    }
+
+    private function resolveFeaturedImageUrl(?string $value): string
+    {
+        if (! $value) {
+            return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+        }
+
+        $path = trim($value);
+        if ($path === '') {
+            return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+        }
+
+        $appUrl = rtrim((string) config('app.url'), '/');
+        $appStoragePrefix = $appUrl !== '' ? $appUrl.'/storage/' : null;
+
+        // Keep Cloudinary/external URLs as-is, but normalize app-local absolute storage URLs.
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            if ($appStoragePrefix === null || ! str_starts_with($path, $appStoragePrefix)) {
                 return $path;
             }
 
-            // Generate the storage URL
-            $url = config('app.url').'/storage/'.$path;
-
-            // Force HTTPS in production
-            if (config('app.env') !== 'local' && ! str_starts_with($url, 'https://')) {
-                $url = str_replace('http://', 'https://', $url);
-            }
-
-            return $url;
+            $path = '/storage/'.ltrim(substr($path, strlen($appStoragePrefix)), '/');
         }
 
-        // Return placeholder image if no featured image
-        return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+        // Accept legacy values like "articles/file.png", "storage/articles/file.png", "/storage/articles/file.png".
+        if (str_starts_with($path, '/storage/')) {
+            $relativePath = ltrim(substr($path, strlen('/storage/')), '/');
+        } elseif (str_starts_with($path, 'storage/')) {
+            $relativePath = ltrim(substr($path, strlen('storage/')), '/');
+        } else {
+            $relativePath = ltrim($path, '/');
+        }
+
+        if (str_starts_with($relativePath, 'public/')) {
+            $relativePath = ltrim(substr($relativePath, strlen('public/')), '/');
+        }
+
+        if ($relativePath === '') {
+            return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+        }
+
+        // Avoid returning broken /storage URLs in production when file is no longer available.
+        try {
+            if (! Storage::disk('public')->exists($relativePath)) {
+                return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+            }
+        } catch (\Throwable $e) {
+            return 'https://placehold.co/800x600/0891b2/ffffff?text=La+Verdad+Herald';
+        }
+
+        $baseUrl = rtrim((string) config('app.url'), '/');
+        $url = $baseUrl.'/storage/'.$relativePath;
+
+        if (config('app.env') !== 'local' && str_starts_with($url, 'http://')) {
+            return 'https://'.substr($url, strlen('http://'));
+        }
+
+        return $url;
     }
 
     public function author(): BelongsTo

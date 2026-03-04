@@ -42,7 +42,7 @@ class MigrateImagesToCloudinary extends Command
         $bar->start();
 
         foreach ($articles as $article) {
-            $localPath = $article->featured_image;
+            $localPath = $article->getRawOriginal('featured_image');
             $fullPath = storage_path('app/public/'.$localPath);
 
             // Check if file exists
