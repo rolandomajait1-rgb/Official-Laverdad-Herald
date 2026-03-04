@@ -42,17 +42,8 @@ class AuthService
             // Generate verification token
             $verificationToken = $this->tokenService->createVerificationToken($user);
 
-            // Send verification email (don't fail registration if email fails)
-            try {
-                $this->mailService->sendVerificationEmail($user, $verificationToken->token);
-            } catch (\Exception $e) {
-                Log::error('Verification email failed during registration', [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-                // Continue - user is created, they can resend verification
-            }
+            // Send after response so registration API stays fast.
+            $this->sendVerificationEmailAfterResponse($user, $verificationToken->token, 'registration');
 
             return $user;
         } catch (\Exception $e) {
@@ -136,8 +127,8 @@ class AuthService
                 // Create new token
                 $verificationToken = $this->tokenService->createVerificationToken($user);
 
-                // Send email
-                $this->mailService->sendVerificationEmail($user, $verificationToken->token);
+                // Send after response to avoid blocking the API.
+                $this->sendVerificationEmailAfterResponse($user, $verificationToken->token, 'resend_verification');
             } catch (\Exception $e) {
                 Log::error('Resend verification email failed', [
                     'email' => $email,
@@ -165,7 +156,7 @@ class AuthService
         if ($user) {
             try {
                 $tokenData = $this->tokenService->createPasswordResetToken($email);
-                $this->mailService->sendPasswordResetEmail($user, $tokenData['token']);
+                $this->sendPasswordResetEmailAfterResponse($user, $tokenData['token']);
             } catch (\Exception $e) {
                 Log::error('Password reset initiation failed', [
                     'email' => $email,
@@ -179,6 +170,59 @@ class AuthService
             'success' => true,
             'message' => 'If an account exists for that email, a password reset link has been sent.',
         ];
+    }
+
+    /**
+     * Queue verification email send to application termination so HTTP response is not blocked.
+     */
+    private function sendVerificationEmailAfterResponse(User $user, string $token, string $source): void
+    {
+        $send = function () use ($user, $token, $source): void {
+            try {
+                $this->mailService->sendVerificationEmail($user, $token);
+            } catch (\Throwable $e) {
+                Log::error('Verification email failed', [
+                    'source' => $source,
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        };
+
+        if (app()->runningInConsole()) {
+            $send();
+
+            return;
+        }
+
+        app()->terminating($send);
+    }
+
+    /**
+     * Queue password reset email send to application termination so HTTP response is not blocked.
+     */
+    private function sendPasswordResetEmailAfterResponse(User $user, string $token): void
+    {
+        $send = function () use ($user, $token): void {
+            try {
+                $this->mailService->sendPasswordResetEmail($user, $token);
+            } catch (\Throwable $e) {
+                Log::error('Password reset email failed', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        };
+
+        if (app()->runningInConsole()) {
+            $send();
+
+            return;
+        }
+
+        app()->terminating($send);
     }
 
     /**

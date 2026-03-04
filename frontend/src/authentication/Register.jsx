@@ -14,6 +14,7 @@ export default function Register() {
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,6 +40,8 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setErrors({});
     
     const validationErrors = validateForm();
@@ -47,6 +50,7 @@ export default function Register() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const response = await axios.post('/api/register', {
         name: formData.name,
@@ -58,13 +62,17 @@ export default function Register() {
       setTimeout(() => navigate('/login?registered=1'), 2000);
     } catch (error) {
       console.error('Registration error:', error);
-      if (error.response?.data?.errors) {
+      if (error.code === 'ECONNABORTED') {
+        setErrors({ general: 'Request timed out. Please try again in a few seconds.' });
+      } else if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
       } else {
         setErrors({ general: 'Registration failed. Please try again.' });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,9 +202,10 @@ export default function Register() {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-70 rounded-2xl bg-cyan-700 px-4 py-2 text-white font-bold hover:bg-cyan-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            Sign Up
+            {isSubmitting ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
 

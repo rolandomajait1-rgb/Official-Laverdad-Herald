@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit("Forbidden\n");
+}
+
 require __DIR__.'/vendor/autoload.php';
 
 $app = require_once __DIR__.'/bootstrap/app.php';
@@ -7,34 +12,30 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 // Find the most recent student user
 $user = App\Models\User::where('email', 'LIKE', '%@student.laverdad.edu.ph')
-    ->orderBy('created_at', 'desc')
+    ->latest('created_at')
     ->first();
 
 if (! $user) {
-    echo "No student user found.\n";
-    exit;
+    fwrite(STDERR, "No student user found.\n");
+    exit(1);
 }
 
-echo "User: {$user->name} ({$user->email})\n";
-echo "User ID: {$user->id}\n";
-echo "Email for verification: {$user->getEmailForVerification()}\n\n";
+fwrite(STDOUT, "User: {$user->name} ({$user->email})\n");
+fwrite(STDOUT, "User ID: {$user->id}\n");
+fwrite(STDOUT, 'Email verified: '.($user->hasVerifiedEmail() ? 'YES' : 'NO')."\n\n");
 
-// Generate the hash
-$hash = sha1($user->getEmailForVerification());
-echo "Generated Hash: {$hash}\n\n";
+// Use token-based verification flow (no manual hash handling)
+$token = App\Models\VerificationToken::where('user_id', $user->id)
+    ->latest('created_at')
+    ->first();
 
-// Generate the verification URL
-$verificationUrl = config('app.url').'/api/email/verify/'.$user->id.'/'.$hash;
-echo "Verification URL:\n{$verificationUrl}\n\n";
+if (! $token) {
+    $token = app(App\Services\TokenService::class)->createVerificationToken($user);
+}
 
-// Test if the hash would match
-$testHash = sha1($user->email);
-echo "Test Hash (from email): {$testHash}\n";
-echo 'Hashes match: '.($hash === $testHash ? 'YES' : 'NO')."\n\n";
+$verificationUrl = config('app.url').'/api/email/verify-token?token='.$token->token;
+$maskedToken = substr($token->token, 0, 8).'...'.substr($token->token, -4);
 
-// Show what the backend would receive
-echo "Backend would check:\n";
-echo "  User email: {$user->email}\n";
-echo '  sha1(email): '.sha1($user->email)."\n";
-echo "  URL hash: {$hash}\n";
-echo '  Match: '.(hash_equals($hash, sha1($user->email)) ? 'YES' : 'NO')."\n";
+fwrite(STDOUT, "Token: {$maskedToken}\n");
+fwrite(STDOUT, "Expires: {$token->expires_at}\n");
+fwrite(STDOUT, "Verification URL:\n{$verificationUrl}\n");

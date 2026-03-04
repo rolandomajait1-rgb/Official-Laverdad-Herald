@@ -8,6 +8,8 @@ import Footer from '../components/Footer';
 import HeaderLink from '../components/HeaderLink';
 import { isAdmin, isModerator, getUserRole } from '../utils/auth';
 import getCategoryColor from '../utils/getCategoryColor';
+import { getStorageUrl } from '../utils/apiConfig';
+import { sanitizeImageSrc } from '../utils/safeUrl';
 
 const RelatedCard = ({ article, onClick, navigate }) => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col group cursor-pointer hover:shadow-md transition-all" onClick={onClick}>
@@ -61,6 +63,7 @@ export default function ArticleDetail() {
   const [likeCount, setLikeCount] = useState(0);
   
   const [copied, setCopied] = useState(false);
+  const fallbackImage = 'https://placehold.co/400x250/e2e8f0/64748b?text=No+Image';
 
 
   useEffect(() => {
@@ -260,7 +263,7 @@ export default function ArticleDetail() {
             <div className="w-full bg-gray-100 p-4 md:p-10">
               <div className="w-full rounded-lg overflow-hidden shadow-inner">
                 <img
-                  src={article.featured_image}
+                  src={sanitizeImageSrc(getStorageUrl(article.featured_image), fallbackImage)}
                   alt={article.title}
                   className="w-full object-contain"
                   style={{ height: '500px' }}
@@ -326,7 +329,7 @@ export default function ArticleDetail() {
                         hour12: true
                       }),
                       author: relatedArticle.author && relatedArticle.author.user ? relatedArticle.author.user.name : 'Unknown Author',
-                      imageUrl: relatedArticle.featured_image || 'https://placehold.co/400x250/e2e8f0/64748b?text=No+Image',
+                      imageUrl: sanitizeImageSrc(getStorageUrl(relatedArticle.featured_image), fallbackImage),
                       excerpt: relatedArticle.excerpt
                     }}
                     onClick={() => navigate('/article/' + relatedArticle.slug)}

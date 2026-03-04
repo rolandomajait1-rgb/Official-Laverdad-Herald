@@ -5,6 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 axios.defaults.baseURL = BASE_URL;
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
+axios.defaults.timeout = 15000;
 
 // Add auth token to requests
 axios.interceptors.request.use(

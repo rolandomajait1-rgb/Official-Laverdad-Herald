@@ -5,6 +5,7 @@ import TeamMemberCard from '../components/TeamCard';
 import Header from '../components/Header';
 import Navigation from '../components/HeaderLink';
 import Footer from '../components/Footer';
+import { sanitizeImageSrc } from '../utils/safeUrl';
 
 const initialTeamMembers = [
   { name: 'Amber Princess Rosana', role: 'UI/UX Designer', image: null },
@@ -50,6 +51,10 @@ const About  = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result);
@@ -66,7 +71,10 @@ const About  = () => {
           id: teamMembers[selectedMemberIndex].id,
           name: DOMPurify.sanitize(editName),
           role: DOMPurify.sanitize(editRole),
-          image: previewUrl || teamMembers[selectedMemberIndex].image
+          image: sanitizeImageSrc(
+            previewUrl || teamMembers[selectedMemberIndex].image,
+            null
+          )
         };
 
         await axios.post('/api/team-members/update', memberData);
@@ -142,7 +150,11 @@ const About  = () => {
             
             {previewUrl && (
               <div className="mb-4 flex justify-center">
-                <img src={previewUrl} alt="Preview" className="w-32 h-32 rounded-full object-cover border-4 border-gray-200" />
+                <img
+                  src={sanitizeImageSrc(previewUrl, 'https://placehold.co/128x128/e2e8f0/64748b?text=Preview')}
+                  alt="Preview"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                />
               </div>
             )}
             

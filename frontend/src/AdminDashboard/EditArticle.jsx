@@ -7,6 +7,7 @@ import Navigation from '../components/HeaderLink';
 
 import axios from '../utils/axiosConfig';
 import { getStorageUrl } from '../utils/apiConfig';
+import { sanitizeImageSrc } from '../utils/safeUrl';
 
 export default function EditArticle() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function EditArticle() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fallbackImage = 'https://via.placeholder.com/300x200/e2e8f0/64748b?text=No+Image';
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -164,16 +166,20 @@ export default function EditArticle() {
               >
                 {(image || currentImage) ? (
                   <img
-                    src={image ? URL.createObjectURL(image) : 
-                      (currentImage ? 
-                        getStorageUrl(
-                          currentImage.startsWith('http')
-                            ? currentImage
-                            : (currentImage.startsWith('/storage/')
+                    src={sanitizeImageSrc(
+                      image
+                        ? URL.createObjectURL(image)
+                        : currentImage
+                          ? getStorageUrl(
+                              currentImage.startsWith('http')
                                 ? currentImage
-                                : `/storage/${String(currentImage).replace(/^\/+/, '')}`)
-                        )
-                        : 'https://via.placeholder.com/300x200/e2e8f0/64748b?text=No+Image')}
+                                : (currentImage.startsWith('/storage/')
+                                    ? currentImage
+                                    : `/storage/${String(currentImage).replace(/^\/+/, '')}`)
+                            )
+                          : fallbackImage,
+                      fallbackImage
+                    )}
                     alt="Cover Preview"
                     className="max-w-full max-h-64 rounded-lg object-cover"
                   />

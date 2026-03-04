@@ -35,7 +35,6 @@ Route::middleware('throttle:3,1')->post('/forgot-password', [AuthController::cla
 
 // Email Verification Routes
 Route::middleware('throttle:10,1')->get('/email/verify-token', [AuthController::class, 'verifyEmailToken'])->name('verification.verify.token');
-Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
 Route::middleware('throttle:3,1')->post('/email/resend-verification', [AuthController::class, 'resendVerificationEmail']);
 
 // Contact Form Routes

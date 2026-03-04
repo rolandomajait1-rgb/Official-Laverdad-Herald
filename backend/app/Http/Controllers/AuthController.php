@@ -171,29 +171,6 @@ class AuthController extends Controller
         }
     }
 
-    public function verifyEmail(Request $request)
-    {
-        if (! $request->hasValidSignature()) {
-            return redirect(config('app.frontend_url').'/login?error=invalid_verification_link');
-        }
-
-        $user = User::findOrFail($request->route('id'));
-
-        if (! hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
-            return redirect(config('app.frontend_url').'/login?error=invalid_verification_link');
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            return redirect(config('app.frontend_url').'/login?verified=1&message=already_verified');
-        }
-
-        if ($user->markEmailAsVerified()) {
-            event(new \Illuminate\Auth\Events\Verified($user));
-        }
-
-        return response()->json(['message' => 'Email verified successfully'], 200);
-    }
-
     public function verifyEmailToken(Request $request)
     {
         $token = $request->query('token');

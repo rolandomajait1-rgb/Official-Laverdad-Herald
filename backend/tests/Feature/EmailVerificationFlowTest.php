@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\AuthController;
 use App\Models\User;
+use App\Models\VerificationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class EmailVerificationFlowTest extends TestCase
@@ -19,7 +17,7 @@ class EmailVerificationFlowTest extends TestCase
         parent::setUp();
 
         config(['app.url' => 'http://localhost']);
-        URL::forceRootUrl('http://localhost');
+        config(['app.frontend_url' => 'http://localhost:5173']);
     }
 
     public function test_api_register_rejects_non_school_email_domain(): void
@@ -54,46 +52,34 @@ class EmailVerificationFlowTest extends TestCase
         ]);
     }
 
-    public function test_signed_verification_request_marks_email_as_verified(): void
+    public function test_token_verification_request_marks_email_as_verified(): void
     {
         $user = User::factory()->unverified()->create();
+        $token = VerificationToken::create([
+            'user_id' => $user->id,
+            'token' => 'test_token_123',
+            'expires_at' => now()->addHour(),
+        ]);
 
-        $signedUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addHour(),
-            [
-                'id' => $user->id,
-                'hash' => sha1($user->getEmailForVerification()),
-            ]
-        );
+        $response = $this->get('/api/email/verify-token?token='.$token->token);
 
-        $request = Request::create($signedUrl, 'GET');
-        $route = app('router')->getRoutes()->match($request);
-        $request->setRouteResolver(fn () => $route);
-
-        $response = app(AuthController::class)->verifyEmail($request);
-
-        $this->assertSame(200, $response->getStatusCode());
+        $response->assertRedirect('http://localhost:5173/login?verified=1');
         $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertNull(VerificationToken::where('token', $token->token)->first());
     }
 
-    public function test_expired_signature_is_rejected_by_verification_route(): void
+    public function test_expired_token_is_rejected_by_verification_route(): void
     {
         $user = User::factory()->unverified()->create();
+        VerificationToken::create([
+            'user_id' => $user->id,
+            'token' => 'expired_token_123',
+            'expires_at' => now()->subMinute(),
+        ]);
 
-        $expiredUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->subMinute(),
-            [
-                'id' => $user->id,
-                'hash' => sha1($user->getEmailForVerification()),
-            ]
-        );
+        $response = $this->get('/api/email/verify-token?token=expired_token_123');
 
-        $requestUri = parse_url($expiredUrl, PHP_URL_PATH).'?'.parse_url($expiredUrl, PHP_URL_QUERY);
-        $response = $this->get($requestUri);
-
-        $response->assertRedirect(config('app.frontend_url').'/login?error=invalid_verification_link');
+        $response->assertRedirect(config('app.frontend_url').'/login?error=invalid_or_expired_token');
         $this->assertNull($user->fresh()->email_verified_at);
     }
 
