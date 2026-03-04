@@ -94,9 +94,9 @@ class MailService
             $this->validateMailConfiguration();
             $verificationUrl = $this->buildVerificationUrl($token);
 
-            Mail::to($user->email)->send(new VerificationEmail($user, $verificationUrl));
+            Mail::to($user->email)->queue(new VerificationEmail($user, $verificationUrl));
 
-            Log::info('Verification email sent', [
+            Log::info('Verification email queued', [
                 'user_email' => $user->email,
                 'operation' => 'email_verification',
             ]);
@@ -121,9 +121,9 @@ class MailService
             $this->validateMailConfiguration();
             $resetUrl = $this->buildPasswordResetUrl($token, $user->email);
 
-            Mail::to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
+            Mail::to($user->email)->queue(new PasswordResetEmail($user, $resetUrl));
 
-            Log::info('Password reset email sent', [
+            Log::info('Password reset email queued', [
                 'user_email' => $user->email,
                 'operation' => 'password_reset',
             ]);
@@ -142,7 +142,7 @@ class MailService
      */
     private function buildVerificationUrl(string $token): string
     {
-        return config('app.frontend_url').'/verify-email?token='.$token;
+        return config('app.url').'/api/email/verify-token?token='.$token;
     }
 
     /**
