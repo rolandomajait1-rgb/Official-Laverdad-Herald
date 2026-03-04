@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -252,8 +253,8 @@ class AuthController extends Controller
 
     private function registrationFailureMessage(\Throwable $exception): string
     {
-        if ($this->isMailConfigurationException($exception)) {
-            return 'Registration is temporarily unavailable because email service is not configured correctly.';
+        if ($this->isMailServiceException($exception)) {
+            return 'Registration is temporarily unavailable because verification email could not be sent. Please try again shortly.';
         }
 
         return 'Registration failed: ' . $exception->getMessage();
@@ -261,12 +262,23 @@ class AuthController extends Controller
 
     private function registrationFailureStatusCode(\Throwable $exception): int
     {
-        return $this->isMailConfigurationException($exception) ? 503 : 500;
+        return $this->isMailServiceException($exception) ? 503 : 500;
     }
 
-    private function isMailConfigurationException(\Throwable $exception): bool
+    private function isMailServiceException(\Throwable $exception): bool
     {
-        return $exception instanceof \RuntimeException &&
-            str_contains($exception->getMessage(), 'Mail configuration');
+        if ($exception instanceof TransportExceptionInterface) {
+            return true;
+        }
+
+        if ($exception instanceof \RuntimeException &&
+            str_contains($exception->getMessage(), 'Mail configuration')) {
+            return true;
+        }
+
+        $message = strtolower($exception->getMessage());
+
+        return str_contains($message, 'unable to send an email') ||
+            str_contains($message, 'smtp');
     }
 }

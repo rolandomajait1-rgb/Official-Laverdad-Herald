@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\VerificationToken;
+use App\Services\MailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Tests\TestCase;
 
 class EmailVerificationFlowTest extends TestCase
@@ -105,5 +107,32 @@ class EmailVerificationFlowTest extends TestCase
 
         $existingResponse->assertStatus(200)->assertJson($expected);
         $missingResponse->assertStatus(200)->assertJson($expected);
+    }
+
+    public function test_api_register_returns_503_and_rolls_back_when_verification_email_fails(): void
+    {
+        $this->mock(MailService::class, function ($mock): void {
+            $mock->shouldReceive('sendVerificationEmail')
+                ->once()
+                ->andThrow(new TransportException('SMTP unavailable'));
+        });
+
+        $payload = [
+            'name' => 'Delivery Failure User',
+            'email' => 'deliveryfail@student.laverdad.edu.ph',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+        ];
+
+        $response = $this->postJson('/api/register', $payload);
+
+        $response->assertStatus(503);
+        $response->assertJson([
+            'message' => 'Registration is temporarily unavailable because verification email could not be sent. Please try again shortly.',
+        ]);
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'deliveryfail@student.laverdad.edu.ph',
+        ]);
     }
 }
