@@ -17,7 +17,15 @@ class MailService
      */
     public function assertMailConfiguration(): void
     {
-        $this->validateMailConfiguration();
+        $this->validateMailConfiguration($this->transactionalMailer());
+    }
+
+    /**
+     * Determine which mailer should be used for registration and reset flows.
+     */
+    private function transactionalMailer(): string
+    {
+        return (string) config('mail.transactional_mailer', config('mail.default', 'smtp'));
     }
 
     /**
@@ -25,17 +33,73 @@ class MailService
      *
      * @throws \RuntimeException
      */
-    private function validateMailConfiguration(): void
+    private function validateMailConfiguration(string $mailer): void
     {
-        if (config('mail.default') !== 'smtp') {
+        if (! array_key_exists($mailer, (array) config('mail.mailers', []))) {
+            throw new \RuntimeException("Unsupported transactional mailer configured: {$mailer}");
+        }
+
+        if ($mailer === 'smtp') {
+            $required = [
+                'MAIL_HOST' => config('mail.mailers.smtp.host'),
+                'MAIL_PORT' => config('mail.mailers.smtp.port'),
+                'MAIL_USERNAME' => config('mail.mailers.smtp.username'),
+                'MAIL_PASSWORD' => config('mail.mailers.smtp.password'),
+                'MAIL_FROM_ADDRESS' => config('mail.from.address'),
+            ];
+
+            $missing = [];
+            foreach ($required as $name => $value) {
+                if ($value === null || $value === '') {
+                    $missing[] = $name;
+                }
+            }
+
+            if ($missing !== []) {
+                throw new \RuntimeException('Mail configuration incomplete: '.implode(', ', $missing));
+            }
+
+            $placeholderValues = [
+                'MAIL_USERNAME' => [
+                    'your_brevo_username',
+                    '<your_brevo_username>',
+                ],
+                'MAIL_PASSWORD' => [
+                    'your_brevo_smtp_key_here',
+                    '<your_brevo_password>',
+                ],
+                'MAIL_FROM_ADDRESS' => [
+                    'noreply@yourdomain.com',
+                    'hello@example.com',
+                    'your@email.com',
+                ],
+            ];
+
+            $placeholderFields = [];
+            foreach ($placeholderValues as $name => $placeholders) {
+                $value = strtolower(trim((string) ($required[$name] ?? '')));
+                if ($value === '') {
+                    continue;
+                }
+
+                if (in_array($value, $placeholders, true)) {
+                    $placeholderFields[] = $name;
+                }
+            }
+
+            if ($placeholderFields !== []) {
+                throw new \RuntimeException('Mail configuration uses placeholder values: '.implode(', ', $placeholderFields));
+            }
+
+            return;
+        }
+
+        if ($mailer !== 'brevo') {
             return;
         }
 
         $required = [
-            'MAIL_HOST' => config('mail.mailers.smtp.host'),
-            'MAIL_PORT' => config('mail.mailers.smtp.port'),
-            'MAIL_USERNAME' => config('mail.mailers.smtp.username'),
-            'MAIL_PASSWORD' => config('mail.mailers.smtp.password'),
+            'BREVO_API_KEY' => config('services.brevo.key'),
             'MAIL_FROM_ADDRESS' => config('mail.from.address'),
         ];
 
@@ -51,13 +115,9 @@ class MailService
         }
 
         $placeholderValues = [
-            'MAIL_USERNAME' => [
-                'your_brevo_username',
-                '<your_brevo_username>',
-            ],
-            'MAIL_PASSWORD' => [
-                'your_brevo_smtp_key_here',
-                '<your_brevo_password>',
+            'BREVO_API_KEY' => [
+                'your_brevo_api_key_here',
+                '<your_brevo_api_key>',
             ],
             'MAIL_FROM_ADDRESS' => [
                 'noreply@yourdomain.com',
@@ -90,20 +150,24 @@ class MailService
      */
     public function sendVerificationEmail(User $user, string $token): void
     {
+        $mailer = $this->transactionalMailer();
+
         try {
-            $this->validateMailConfiguration();
+            $this->validateMailConfiguration($mailer);
             $verificationUrl = $this->buildVerificationUrl($token);
 
-            Mail::to($user->email)->send(new VerificationEmail($user, $verificationUrl));
+            Mail::mailer($mailer)->to($user->email)->send(new VerificationEmail($user, $verificationUrl));
 
-            Log::info('Verification email queued', [
+            Log::info('Verification email sent', [
                 'user_email' => $user->email,
                 'operation' => 'email_verification',
+                'mailer' => $mailer,
             ]);
         } catch (\Exception $e) {
             Log::error('Verification email failed', [
                 'user_email' => $user->email,
                 'operation' => 'email_verification',
+                'mailer' => $mailer,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
@@ -117,20 +181,24 @@ class MailService
      */
     public function sendPasswordResetEmail(User $user, string $token): void
     {
+        $mailer = $this->transactionalMailer();
+
         try {
-            $this->validateMailConfiguration();
+            $this->validateMailConfiguration($mailer);
             $resetUrl = $this->buildPasswordResetUrl($token, $user->email);
 
-            Mail::to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
+            Mail::mailer($mailer)->to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
 
-            Log::info('Password reset email queued', [
+            Log::info('Password reset email sent', [
                 'user_email' => $user->email,
                 'operation' => 'password_reset',
+                'mailer' => $mailer,
             ]);
         } catch (\Exception $e) {
             Log::error('Password reset email failed', [
                 'user_email' => $user->email,
                 'operation' => 'password_reset',
+                'mailer' => $mailer,
                 'error' => $e->getMessage(),
             ]);
             throw $e;

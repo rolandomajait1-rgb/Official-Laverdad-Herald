@@ -18,6 +18,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Transactional Mailer
+    |--------------------------------------------------------------------------
+    |
+    | Critical user flows such as registration verification and password reset
+    | should use a deterministic mailer regardless of the app-wide default.
+    |
+    */
+
+    'transactional_mailer' => env('TRANSACTIONAL_MAIL_MAILER', 'smtp'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
     |
