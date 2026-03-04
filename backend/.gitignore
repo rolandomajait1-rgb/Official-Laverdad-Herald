@@ -25,3 +25,16 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local diagnostics and ad-hoc scripts (may include temporary secrets)
+/check-env.php
+/check_email_queue.ps1
+/resend_verification.ps1
+/test-email-smtp.php
+/test-smtp-direct.php
+/test_brevo.php
+/test_laravel_mail.php
+/test_mail.php
+/test_register.ps1
+/test_smtp.php
+/verify_user_manual.ps1
