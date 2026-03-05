@@ -29,8 +29,6 @@
             <div style="text-align: center;">
                 <a href="{{ $verificationUrl }}" class="button">Verify Email Address</a>
             </div>
-            <p style="margin-top: 30px;">Or copy and paste this link in your browser:</p>
-            <p class="link">{{ $verificationUrl }}</p>
             <p style="margin-top: 30px; color: #ef4444;"><strong>⏰ This link will expire in 24 hours.</strong></p>
             <p style="color: #6b7280; font-size: 14px;">If you didn't create this account, please ignore this email.</p>
         </div>
