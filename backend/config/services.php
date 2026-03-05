@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+    ],
+
     'school_domain' => env('SCHOOL_DOMAIN'),
 
 ];

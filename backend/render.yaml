@@ -3,8 +3,8 @@ services:
     name: laverdad-herald-backend
     runtime: docker
     plan: free
-    buildCommand: cp .env.production .env && composer install --no-dev --optimize-autoloader
-    startCommand: php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+    buildCommand: cp .env.production .env; composer install --no-dev --optimize-autoloader
+    startCommand: php artisan config:clear; php artisan config:cache; php artisan migrate --force; php artisan serve --host=0.0.0.0 --port=$PORT
     envVars:
       - key: APP_KEY
         sync: false
@@ -40,6 +40,8 @@ services:
         value: database
       - key: MAIL_MAILER
         value: smtp
+      - key: TRANSACTIONAL_MAIL_MAILER
+        value: smtp
       - key: MAIL_HOST
         sync: false
       - key: MAIL_PORT
@@ -48,16 +50,18 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
       - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME
-        value: "La Verdad Herald"
+        sync: false
 
   - type: worker
     name: laverdad-herald-queue
     runtime: docker
     plan: free
-    buildCommand: cp .env.production .env && composer install --no-dev --optimize-autoloader
+    buildCommand: cp .env.production .env; composer install --no-dev --optimize-autoloader
     startCommand: php artisan queue:work database --sleep=3 --tries=3 --max-time=3600
     envVars:
       - key: APP_ENV
@@ -90,6 +94,8 @@ services:
         value: require
       - key: MAIL_MAILER
         value: smtp
+      - key: TRANSACTIONAL_MAIL_MAILER
+        value: smtp
       - key: MAIL_HOST
         sync: false
       - key: MAIL_PORT
@@ -98,10 +104,12 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
       - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME
-        value: "La Verdad Herald"
+        sync: false
 
 databases:
   - name: laverdad-herald-db

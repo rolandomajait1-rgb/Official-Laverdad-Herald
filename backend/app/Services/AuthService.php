@@ -44,10 +44,19 @@ class AuthService
             // Generate verification token
             $verificationToken = $this->tokenService->createVerificationToken($user);
 
-            // Fail registration when verification mail cannot be delivered.
-            $this->mailService->sendVerificationEmail($user, $verificationToken->token);
-
             DB::commit();
+
+            // Send email after commit so transient mail failures don't roll back registration.
+            try {
+                $this->mailService->sendVerificationEmail($user, $verificationToken->token);
+            } catch (\Throwable $e) {
+                Log::error('Verification email failed after registration', [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $user;
         } catch (\Exception $e) {
             DB::rollBack();

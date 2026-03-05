@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\PasswordResetEmail;
 use App\Mail\VerificationEmail;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -153,15 +154,32 @@ class MailService
         $mailer = $this->transactionalMailer();
 
         try {
-            $this->validateMailConfiguration($mailer);
-            $verificationUrl = $this->buildVerificationUrl($token);
+            if ($mailer === 'brevo') {
+                $verificationUrl = $this->buildVerificationUrl($token);
+                $this->sendBrevoEmail(
+                    $user,
+                    'Verify Your Email Address',
+                    view('emails.verify-email', [
+                        'user' => $user,
+                        'verificationUrl' => $verificationUrl,
+                    ])->render(),
+                    ['email_verification']
+                );
 
-            Mail::mailer($mailer)->to($user->email)->send(new VerificationEmail($user, $verificationUrl));
+                $usedMailer = 'brevo_api';
+            } else {
+                $this->validateMailConfiguration($mailer);
+                $verificationUrl = $this->buildVerificationUrl($token);
+
+                Mail::mailer($mailer)->to($user->email)->send(new VerificationEmail($user, $verificationUrl));
+
+                $usedMailer = $mailer;
+            }
 
             Log::info('Verification email sent', [
                 'user_email' => $user->email,
                 'operation' => 'email_verification',
-                'mailer' => $mailer,
+                'mailer' => $usedMailer,
             ]);
         } catch (\Exception $e) {
             Log::error('Verification email failed', [
@@ -184,15 +202,32 @@ class MailService
         $mailer = $this->transactionalMailer();
 
         try {
-            $this->validateMailConfiguration($mailer);
             $resetUrl = $this->buildPasswordResetUrl($token, $user->email);
 
-            Mail::mailer($mailer)->to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
+            if ($mailer === 'brevo') {
+                $this->sendBrevoEmail(
+                    $user,
+                    'Reset Your Password',
+                    view('emails.reset-password', [
+                        'user' => $user,
+                        'resetUrl' => $resetUrl,
+                    ])->render(),
+                    ['password_reset']
+                );
+
+                $usedMailer = 'brevo_api';
+            } else {
+                $this->validateMailConfiguration($mailer);
+
+                Mail::mailer($mailer)->to($user->email)->send(new PasswordResetEmail($user, $resetUrl));
+
+                $usedMailer = $mailer;
+            }
 
             Log::info('Password reset email sent', [
                 'user_email' => $user->email,
                 'operation' => 'password_reset',
-                'mailer' => $mailer,
+                'mailer' => $usedMailer,
             ]);
         } catch (\Exception $e) {
             Log::error('Password reset email failed', [
@@ -202,6 +237,48 @@ class MailService
                 'error' => $e->getMessage(),
             ]);
             throw $e;
+        }
+    }
+
+    /**
+     * Send an email using Brevo's HTTP API.
+     *
+     * @throws \RuntimeException
+     */
+    private function sendBrevoEmail(User $user, string $subject, string $htmlContent, array $tags = []): void
+    {
+        $this->validateMailConfiguration('brevo');
+
+        $apiKey = (string) config('services.brevo.key');
+        $fromEmail = (string) config('mail.from.address');
+        $fromName = (string) config('mail.from.name');
+
+        $payload = [
+            'sender' => [
+                'email' => $fromEmail,
+                'name' => $fromName,
+            ],
+            'to' => [
+                [
+                    'email' => $user->email,
+                    'name' => $user->name,
+                ],
+            ],
+            'subject' => $subject,
+            'htmlContent' => $htmlContent,
+        ];
+
+        if ($tags !== []) {
+            $payload['tags'] = $tags;
+        }
+
+        $response = Http::withHeaders([
+            'accept' => 'application/json',
+            'api-key' => $apiKey,
+        ])->post('https://api.brevo.com/v3/smtp/email', $payload);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException('Brevo API error: '.$response->body());
         }
     }
 
